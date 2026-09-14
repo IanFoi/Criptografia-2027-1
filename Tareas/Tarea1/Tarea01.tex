@@ -1,0 +1,280 @@
+\documentclass[12pt]{article} % Tamano de fuente: 12
+% Codificación de fuente T1 (ñ)
+% Utiliza 8 bits en lugar de 7 para caracteres especiales en el documento
+\usepackage[T1]{fontenc}
+% Usar fuente Latin Modern (reemplazando la fuente por defecto: Computer Modern)
+% Agrega tamaños y formas que le faltan a la fuente original de LaTeX.
+\usepackage{lmodern}
+% Margen del documento
+\usepackage{geometry}
+\geometry{
+    top=3.5cm, 
+    bottom=2.5cm, 
+    left=2.5cm, 
+    right=2.5cm,
+    headheight=42pt 
+}
+% Paquete para headers y footers
+\usepackage{fancyhdr}
+% Paquete para referenciar la ultima página del documento.
+\usepackage{lastpage}
+% --- Configuración del Encabezado ---
+\pagestyle{fancy}
+\fancyhf{}
+% Datos del encabezado
+\fancyhead[L]{
+    \textit{Arroyo Ramírez Ian Alejandro}
+}
+\fancyhead[R]{
+    \textit{Criptografía y Seguridad} \\
+    \textit{Tarea 1: Perfectópolis} \\
+    \textit{6 de Septiembre, 2026}
+}
+
+% Configuración del Pie de Página 
+\fancyfoot[C]{Página \thepage\ de \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Traduccion de texto automatizado a espanol
+% Reglas de corte (Justificacion) del texto
+\usepackage[spanish]{babel}
+% Punto en lugar de coma decimal
+\decimalpoint
+% Manejo de imagenes
+\usepackage{graphicx}
+% Colores (dvipsnames para colores extra, table para celdas/filas)
+\usepackage[dvipsnames,table]{xcolor}
+% Usado en este documento para: foreach
+\usepackage{pgffor}
+% Numeraciones de ecuaciones, imagenes, etc.
+\usepackage{amsmath}
+% Conjuntos Numericos (N, Z, R) y texto en ecuaciones
+\usepackage{amssymb}
+% Para la P bonita del conjunto Potencia
+\usepackage{mathrsfs}
+% Brackets para expresiones de tipos
+\usepackage{stmaryrd}
+\SetSymbolFont{stmry}{bold}{U}{stmry}{m}{n}
+% Enumeraciones Personalizadas
+\usepackage{enumitem}
+% Comentarios en Bloque
+\usepackage{verbatim}
+% Cajitas para el Codigo
+\usepackage{listings}
+\lstset{literate=
+  {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+  {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+  {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?`}}1 {¡}{{!`}}1
+}
+% Formatos para Teoremas, Lemas, Demostraciones, Corolarios, etc.
+\usepackage{amsthm}
+% Dividir tablas en varias paginas automaticamente
+\usepackage{longtable}
+% Tablas con columnas ajustables
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+% Formato personalizado para secciones del documento
+\usepackage{titlesec}
+% Texto escrito dentro de un entorno matematico en negritas
+\usepackage{bm}
+% Paquete para control estricto de posición de flotantes [H]
+\usepackage{float}
+% Formato de citas bibliográficas numéricas
+\usepackage{cite}
+% Biblioteca para agregar hipervínculos y referencias cruzadas
+\usepackage{hyperref}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ======================================================================
+% Configuraciones Generales
+% ======================================================================
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ======================================================================
+% Atajos definidos para el documento
+% ======================================================================
+\graphicspath{{imagenes/}}
+
+% ======================================================================
+% Colores personalizados
+% ======================================================================
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{blue_pigment}{HTML}{333399} 
+\definecolor{commentblue}{HTML}{186e96} 
+\definecolor{sintaxsanddark}{HTML}{ae804c} 
+\definecolor{sand}{HTML}{fff4e8}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+% ======================================================================
+% Comandos Globales
+% ======================================================================
+\newcommand{\textColor}[1]{
+    \ifmmode
+        \textcolor{OliveGreen}{#1}
+    \else
+        \textbf{\textcolor{OliveGreen}{#1}}
+    \fi
+}
+
+\renewcommand{\qedsymbol}{\ensuremath{\blacksquare}}
+
+% ======================================================================
+% Jerarquia de secciones
+% ======================================================================
+\titleformat{\section}
+    {\color{MidnightBlue}\normalfont\Large\bfseries}
+    {\thesection}
+    {1em}
+    {}
+
+\titleformat{\subsection}
+    {\color{MidnightBlue}\normalfont\large\bfseries}
+    {\thesubsection}
+    {1em}
+    {}
+
+% ======================================================================
+% Listas (itemize)
+% ======================================================================
+\newlist{itemizeColor}{itemize}{3}
+\setlist[itemizeColor]{font=\color{OliveGreen}\bfseries}
+\setlist[itemizeColor,1]{label=\textbullet}
+\setlist[itemizeColor,2]{label=\textendash}
+\setlist[itemizeColor,3]{label=\textasteriskcentered}
+
+% ======================================================================
+% Enumeraciones (enumerate)
+% ======================================================================
+\newlist{enumerateColor}{enumerate}{3}
+\setlist[enumerateColor]{font=\color{OliveGreen}\bfseries}
+\setlist[enumerateColor,1]{label=\arabic*.}
+\setlist[enumerateColor,2]{label=\alph*)}
+\setlist[enumerateColor,3]{label=\roman*.}
+
+% ======================================================================
+% Listings (cuadros de codigo/evaluacion)
+% ======================================================================
+\lstdefinestyle{gris}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstdefinestyle{naranjoso}{
+    backgroundcolor=\color{sand},
+    commentstyle=\color{commentblue},
+    keywordstyle=\color{sintaxsanddark},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{blue_pigment},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=right,                    
+    numbersep=6pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{
+     literate=
+         {á}{{\'a}}1
+         {í}{{\'i}}1
+         {é}{{\'e}}1
+         {ú}{{\'u}}1
+         {ó}{{\'o}}1
+         {Á}{{\'A}}1
+         {Í}{{\'I}}1
+         {É}{{\'E}}1
+         {Ú}{{\'U}}1
+         {Ó}{{\'O}}1
+         {ñ}{{\~n}}1
+         {Ñ}{{\~N}}1                
+}
+
+\lstset{style=gris}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ======================================================================
+% Inicio del documento
+% ======================================================================
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+% ----------------------------------------------------------------------
+% Portada del trabajo
+% ----------------------------------------------------------------------
+\hypersetup{pageanchor=false}
+\input{recursos/portada}
+\hypersetup{pageanchor=true}
+
+% ----------------------------------------------------------------------
+% Parte 1: Diagnóstico de seguridad
+% ----------------------------------------------------------------------
+\section*{Parte 1. Diagnóstico de seguridad}
+\input{ejercicios/parte1_diagnostico}
+
+% ----------------------------------------------------------------------
+% Parte 2: Mecanismos criptográficos
+% ----------------------------------------------------------------------
+\section*{Parte 2. Mecanismos criptográficos}
+\input{ejercicios/parte2_mecanismos}
+
+% ----------------------------------------------------------------------
+% Parte 3: Investigación del incidente
+% ----------------------------------------------------------------------
+\section*{Parte 3. Investigación del incidente}
+\input{ejercicios/parte3_incidentes}
+
+% ----------------------------------------------------------------------
+% Parte 4: El dilema ético
+% ----------------------------------------------------------------------
+\section*{Parte 4. El dilema ético}
+\input{ejercicios/parte4_dilemas}
+
+% ----------------------------------------------------------------------
+% Parte 5: Diseñen Perfectópolis Segura
+% ----------------------------------------------------------------------
+\section*{Parte 5. Diseñen Perfectópolis Segura}
+\input{ejercicios/parte5_reglas}
+
+% ----------------------------------------------------------------------
+% Ejercicio con Inteligencia Artificial
+% ----------------------------------------------------------------------
+\section*{Ejercicio obligatorio con Inteligencia Artificial}
+\input{ejercicios/parte6_ia}
+
+% ----------------------------------------------------------------------
+% Declaración de responsabilidad del equipo
+% ----------------------------------------------------------------------
+\section*{Declaración de responsabilidad}
+\input{ejercicios/parte7_declaracion}
+
+% ----------------------------------------------------------------------
+% Referencias bibliográficas
+% ----------------------------------------------------------------------
+\bibliographystyle{ieeetr}
+% \nocite{*}
+\bibliography{referencias}
+
+\end{document}

@@ -1,0 +1,33 @@
+Investiga y compara alternativas de sistemas operativos a Kali Linux. ¿Cuál es su principal propósito?
+
+Algunas alternativas de Kali Linux en el área de ciberseguridad son Parrot Security OS (un sistema con un enfoque más amigable y de uso diario que Kali), BlackArch Linux (una distribución basada en Arch con un repositorio masivo de herramientas) y BackBox Linux (una distribución basada en Ubuntu ligera y optimizada para pentesting).
+
+Recopilé algunas de sus características en el siguiente cuadro comparativo:
+
+\renewcommand{\arraystretch}{1.3}
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{tabularx}{\textwidth}{|>{\bfseries\raggedright\arraybackslash}p{2.8cm}|Y|Y|Y|Y|}
+    \hline
+    \textbf{Característica} & \textbf{Kali Linux} & \textbf{Parrot Security OS} & \textbf{BlackArch Linux} & \textbf{BackBox Linux} \\
+    \hline
+    Basado en & Debian Testing & Debian & Arch Linux & Ubuntu \\
+    \hline
+    Enfoque Principal & Pentesting puro y análisis forense. & Pentesting, privacidad y desarrollo. Uso diario. & Pentesting avanzado e investigación de seguridad. & Auditorías de seguridad y pentesting. \\
+    \hline
+    Público Objetivo & Profesionales de seguridad y estudiantes intermedios. & Principiantes y profesionales (muy amigable). & Usuarios muy avanzados y expertos en seguridad. & Profesionales de seguridad y administradores. \\
+    \hline
+    Entorno de Escritorio & XFCE (soporta KDE, GNOME) & MATE (soporta KDE) & Gestores de ventanas (Fluxbox, Openbox, etc.) & XFCE \\
+    \hline
+    Herramientas & +600 preinstaladas & Cientos (incluye herramientas de anonimato/cripto) & +2,800 preinstaladas (repositorio masivo) & $\sim$70 (solo las más esenciales) \\
+    \hline
+    Consumo de Recursos & Moderado & Muy ligero / Eficiente & Variable (ligero en RAM, ISO completa pesada) & Muy ligero (ideal para hardware modesto) \\
+    \hline
+    Gestor de Paquetes & APT (\texttt{apt}) & APT (\texttt{apt}) & Pacman (\texttt{pacman}) & APT (\texttt{apt}) \\
+    \end{tabularx}
+\end{table}
+
+En general, encontré que Parrot Security OS es la alternativa más reconocida dentro del área por ser una distribución más amigable que Kali; además de venir con herramientas de hacking de manera nativa, el sistema viene configurado con herramientas para proteger la privacidad como el enrutamiento a través de Tor, y también es más recomendable para el uso diario.
+Por el contrario, BlackArch tiene una gran cantidad de herramientas para realizar tareas de seguridad y, al estar basado en Arch Linux, es un sistema \textit{rolling release} puro y se compila de manera más personalizada.
+Finalmente, BackBox Linux es una opción más ligera, estable y rápida, pues cuenta con menos herramientas (aquellas que probablemente no utilicen usuarios menos experimentados), sino que incluye únicamente las herramientas más reconocidas, útiles y probadas para garantizar la velocidad y la estabilidad.

@@ -1,0 +1,87 @@
+% ======================================================================
+% Ejercicio Obligatorio: Uso Responsable y Crítico de Inteligencia Artificial
+% ======================================================================
+
+Seleccionen una decisión de seguridad de su propuesta y consulten a una herramienta de Inteligencia Artificial (ChatGPT, Gemini, Copilot, etc.). Documenten a continuación la interacción y su evaluación crítica como equipo.
+
+\subsection*{1. Decisión de seguridad seleccionada}
+% TODO: Describir la decisión técnica o de seguridad que fue sometida a consulta
+
+
+Decidí consultar la decisión de cifrar las contraseñas utilizando hash de contraseñas con salt para solucionar el probable almacenamiento en texto plano de contraseñas en el sistema de PerfectID.
+\subsection*{2. Prompt utilizado}
+% TODO: Pegar el prompt exacto utilizado en la consulta
+\begin{lstlisting}[style=gris]
+% TODO: Escribir aqui el prompt exacto enviado a la IA
+Actua como un experto en ciberseguridad. En nuestra ciudad
+inteligente llamada Perfectopolis, tenemos un sistema llamado PerfectID en el que "cada ciudadano tiene una cuenta denominada PerfectID, utilizada para acceder a servicios
+gubernamentales.
+La cuenta almacena:
+- nombre;
+- CURP o identificador ciudadano;
+- correo electrónico;
+- teléfono;
+- contraseña;
+- fotografía;
+- historial de trámites.
+Actualmente, el sistema permite iniciar sesión solamente con usuario y contraseña. Algunos
+funcionarios han propuesto incorporar reconocimiento facial para mejorar la seguridad.
+Problemas detectados
+- Algunos ciudadanos reutilizan contraseñas.
+- No existe autenticación multifactor.
+- No está claro cómo se almacenan las contraseñas.
+- Una filtración podría exponer información de miles de ciudadanos.
+- Existe preocupación sobre el almacenamiento de información biométrica"
+
+Para solucionar el posible mal almacenamiento de contraseñas decidimos que era importante cifrarlas utilizando hash de contraseñas con salt. Es buena esta decisión? Explica ventajas y desventajas así como alternativas teniendo en cuenta los recursos que pueda requerir la implementación.
+\end{lstlisting}
+
+\subsection*{3. Síntesis de la respuesta de la IA}
+% TODO: Resumir las recomendaciones y argumentos principales proporcionados por la IA
+Sí, implementar funciones hash con salt es una decisión excelente y representa el estándar mínimo indispensable que cualquier sistema moderno de gestión de identidades debe cumplir.
+
+Sin embargo, desde la perspectiva de ciberseguridad, esta medida por sí sola es una defensa reactiva (protege los datos si la base de datos es vulnerada), pero no soluciona las vulnerabilidades activas del sistema PerfectID, como la reutilización de contraseñas.
+
+Las ventajas y desventajas las resumo en el cuadro comparativo: 
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.8}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}X|}
+\hline
+\multicolumn{1}{|c|}{\textbf{Ventajas}} & \multicolumn{1}{c|}{\textbf{Desventajas}} \\
+\hline
+\textbf{Inutiliza las tablas arcoíris (\textit{rainbow tables}):} El uso de un \textit{salt} aleatorio por ciudadano impide que los atacantes utilicen bases de datos de hashes precalculados para descifrar masivamente las contraseñas. & \textbf{No mitiga el \textit{Credential Stuffing}:} El cifrado protege la base de datos, pero no evita que un atacante inicie sesión usando contraseñas que el ciudadano haya reutilizado y que hayan sido filtradas en otros servicios. \\
+\hline
+\textbf{Oculta patrones repetidos:} Si múltiples ciudadanos utilizan la misma contraseña débil (ej. "Perfectopolis2026"), sus registros en la base de datos se verán completamente distintos gracias al \textit{salt} único. & \textbf{Alto costo de procesamiento computacional:} Los algoritmos de hash seguros están diseñados para ser lentos. Esto puede causar sobrecarga en los servidores durante picos de concurrencia (ej. temporadas de trámites). \\
+\hline
+\textbf{Implementación altamente accesible:} La inmensa mayoría de lenguajes y \textit{frameworks} de desarrollo actuales cuentan con soporte nativo y gratuito para hashes con \textit{salt} modernos (como Argon2 o bcrypt). & \textbf{Riesgo por algoritmos obsoletos:} Añadir un \textit{salt} a algoritmos descontinuados o rápidos (como MD5 o SHA-256) sigue siendo vulnerable ante hardware de descifrado moderno. \\
+\hline
+\end{tabularx}
+\caption{Análisis de impacto del Hash con Salt en PerfectID}
+\end{table}
+Además sugirió utilizar autenticación multifactor vía TOTP o lo que asume que es la herramienta definitiva:
+Passkeys / WebAuthn (Recursos: Altos). Esta alternativa resuelve de un solo golpe la reutilización de contraseñas, el phishing y la preocupación de los funcionarios sobre la biometría. Cómo funciona: En lugar de contraseñas, el sistema usa criptografía asimétrica. El ciudadano se autentica usando el reconocimiento facial o huella digital de su propio teléfono o computadora (FaceID, Windows Hello, Android Biometrics).
+Por qué es ideal para Perfectópolis: La información biométrica nunca sale del dispositivo del usuario. El servidor de PerfectID solo recibe y almacena una clave pública matemática. Esto elimina el riesgo de fuga de datos biométricos masivos y cancela por completo el robo de contraseñas porque estas dejan de existir.
+\subsection*{4. Evaluación crítica del equipo}
+
+\begin{enumerateColor}
+    \item \textbf{¿Qué respondió correctamente?}
+    % TODO: Responder aquí
+	   Si bien considero que las medidas que aportó son apropiadas, incluso el uso de Passkeys y WebAuthn son herramientas que desconocía, considero que no profundiza para nada en las implicaciones éticas de utilizar estas herramientas, pues de una u otra forma es imposible proteger al cien por ciento la información biométrica de los usuarios que es una información sumamente sensible y poderosa.
+
+    \item \textbf{¿Encontraron información dudosa, incompleta o incorrecta?}
+    % TODO: Responder aquí
+	    Me parece que puede profundizar de mejor manera en el tema ético y de funcionamiento de las tecnologías para convencerme de que la propuesta que me da como una mejor opción verdaderamente protege de mejor manera la información de los usuarios. Sin embargo, considero que se requiere de una investigación más exhaustiva y de más conocimiento para poder aprobar las propuestas de la IA.
+
+    \item \textbf{¿Cómo verificaron la información?}
+    % TODO: Responder aquí
+	    Comparamos la información dada con nuestras deducciones en ejercicios pasados a partir de utilizar las fuentes del curso.
+
+    \item \textbf{¿Cambió su decisión después de consultar la IA?}
+    % TODO: Responder aquí
+	    Sí, se complementó pero considero que se requiere un análisis con respecto a la utilización de los datos biométricos.
+
+    \item \textbf{¿Aceptarían la recomendación de la IA si ustedes fueran responsables del sistema?}
+    % TODO: Responder aquí
+	    Sí, puede utilizarse como una herramienta útil para agilizar el proceso de la información; sin embargo, no puede utilizarse la información de la Inteligencia Artificial sin tener conocimiento previo del sistema, conocimiento de las tecnologías y hacer un análisis e investigación exhaustivo de las propuestas de la IA.
+\end{enumerateColor}

@@ -1,0 +1,388 @@
+\documentclass[12pt]{article} % Tamano de fuente: 12
+% Codificación de fuente T1 (ñ)
+% Utiliza 8 bits en lugar de 7 para caracteres especiales en el documento
+\usepackage[T1]{fontenc}
+% Usar fuente Latin Modern (reemplazando la fuente por defecto: Computer Modern)
+% Agrega tamaños y formas que le faltan a la fuente original de LaTeX.
+\usepackage{lmodern}
+% Margen del documento
+\usepackage{geometry}
+\geometry{
+    top=3.5cm, 
+    bottom=2.5cm, 
+    left=2.5cm, 
+    right=2.5cm,
+    headheight=42pt 
+}
+% Paquete para headers y footers
+\usepackage{fancyhdr}
+% Paquete para referenciar la ultima página del documento.
+\usepackage{lastpage}
+% --- Configuración del Encabezado ---
+\pagestyle{fancy}
+\fancyhf{}
+% Datos del encabezado
+\fancyhead[L]{
+    \textit{Ian Alejandro Arroyo Ramírez}
+}
+\fancyhead[R]{
+    \textit{Criptografía y Seguridad} \\
+    \textit{Práctica 1} \\
+    \textit{31 de agosto, 2026}
+}
+
+% Configuración del Pie de Página 
+\fancyfoot[C]{Página \thepage\ de \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+
+% Traduccion de texto automatizado a espanol
+% Reglas de corte (Justificacion) del texto
+\usepackage[spanish]{babel}
+% Punto en lugar de coma decimal
+\decimalpoint
+% Manejo de imagenes
+\usepackage{graphicx}
+% Colores (dvipsnames para colores extra)
+\usepackage[dvipsnames]{xcolor}
+% Usado en este documento para: generar automatas
+\usepackage{tikz}
+\usetikzlibrary{automata, positioning, arrows.meta, babel}
+% Usado en este documento para: foreach
+\usepackage{pgffor}
+% Numeraciones de ecuaciones, imagenes, etc.
+\usepackage{amsmath}
+% Conjuntos Numericos (N, Z, R) y texto en ecuaciones
+\usepackage{amssymb}
+% Para la P bonita del conjunto Potencia (genera todo el abecedario
+% en ese tipo de cursiva)
+\usepackage{mathrsfs}
+% Brackets para expresiones de tipos (no tiene un formato de bf)
+\usepackage{stmaryrd}
+% Para evitar conflictos, si Latex necesita usar el formato bf, 
+% pero se encuentra con un formato matematico que contiene símbolos
+% de 'stmry', ignora el formato bf (m) y usa el formato normal (n)
+\SetSymbolFont{stmry}{bold}{U}{stmry}{m}{n}
+% Enumeraciones Personalizadas
+\usepackage{enumitem}
+% Comentarios en Bloque
+\usepackage{verbatim}
+% Cajitas para el Codigo
+\usepackage{listings}
+% Formatos para Teoremas, Lemas, Demostraciones, Corolarios, etc.
+\usepackage{amsthm}
+% Dividir tablas en varias paginas automaticamente
+\usepackage{longtable}
+% Tablas con columnas ajustables
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+% Formato personalizado para secciones del documento
+\usepackage{titlesec}
+% Texto escrito dentro de un entorno matematico en negritas
+\usepackage{bm}
+% Paquete para control estricto de posición de flotantes [H]
+\usepackage{float}
+% Formato de citas bibliográficas numéricas
+\usepackage{cite}
+% Bliblioteca para agregar hipervínculos y referencias cruzadas
+\usepackage{hyperref}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ======================================================================
+% Configuraciones Generales
+% ======================================================================
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ======================================================================
+% Atajos definidos para el documento
+% ======================================================================
+
+% Ruta de la carpeta de imagenes, ahora para
+% insertar una imagen es suficiente la linea:
+% \includegraphics[width=0.8\textwidth]{diagrama}
+\graphicspath{{imagenes/}}
+
+
+% ======================================================================
+% Colores personalizados
+% ======================================================================
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{blue_pigment}{HTML}{333399} 
+\definecolor{commentblue}{HTML}{186e96} 
+\definecolor{sintaxsanddark}{HTML}{ae804c} 
+\definecolor{sand}{HTML}{fff4e8}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ======================================================================
+% Comandos Globales
+% ======================================================================
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ======================================================================
+% Definicion de comandos nuevos
+% ======================================================================
+
+% Cambia el color de los caracteres especificados al color especificado
+% en el comando.
+% Actualmente: Verde Olivo OliveGreen
+% Usar para mantener el mismo color de resaltado de texto a secciones de
+% misma procedencia.
+\newcommand{\textColor}[1]{
+    % Si estamos en un entorno matematico
+    \ifmmode
+        % No aplicamos negritas
+        \textcolor{OliveGreen}{#1}
+    % En un entorno de texto limpio usamos textbf
+    \else
+        \textbf{\textcolor{OliveGreen}{#1}}
+    \fi
+}
+
+
+% ======================================================================
+% Renombramiento de comandos
+% ======================================================================
+
+% Halmos al final de una demostración pintado de negro en lugar de blanco
+\renewcommand{\qedsymbol}{\ensuremath{\blacksquare}}
+
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ======================================================================
+% Estilos definidos para entornos especificos
+% ======================================================================
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ======================================================================
+% Jerarquia de secciones
+% ======================================================================
+
+% Configuración automática para el comando \section
+% Mantiene el formato preestablecido a excepción del color que
+% actualmente cambia a : MidnightBlue
+\titleformat{\section}
+    % Formato preestablecido, pero con color personalizado
+    {\color{MidnightBlue}\normalfont\Large\bfseries}
+    % Contador/Etiquetado de secciones automatico
+    {\thesection}
+    % Espacio horizontal entre el numero y el titulo de la seccion
+    {1em} % Recordatorio de que 'em' es una unidad tipografica en LaTeX
+    % Formato entre numero de la seccion y titulo de la misma, se puede 
+    % añadir una linea horizontal debajo del titulo, cambiar el color
+    % y que la etiqueta de numeracion se mantenga del color personalizado
+    % o insertar cualquier simbolo/icono en el espacio establecido
+    {}
+
+
+% ======================================================================
+% Listas (itemize)
+% ======================================================================
+
+% Copia de itemize para utilizar el color establecido en \textColor
+% en las listas de viñetas que sea necesario.
+\newlist{itemizeColor}{itemize}{3} % El 3 es la profundidad recomendada
+                                   % para no perder la formalidad del doc 
+
+% Configuracion global de itemizeColor
+% Listas de viñetas del color predeterminado, asegurarse de que sea el
+% mismo color del comando \textColor para que el documento se mantenga
+% equilibrado. (Actuamente: OliveGreen)
+% "font=" aplica el estilo a la viñeta
+% \bfseries para aplicar negritas dentro del formato matematico
+\setlist[itemizeColor]{font=\color{OliveGreen}\bfseries}
+
+% Asignación de símbolos para cada nivel de itemizeColor
+% Nivel 1: Punto (\textbullet)
+\setlist[itemizeColor,1]{label=\textbullet}
+% Nivel 2: Guion (\textendash)
+\setlist[itemizeColor,2]{label=\textendash}
+% Nivel 3: Asterisco (\textasteriskcentered)
+\setlist[itemizeColor,3]{label=\textasteriskcentered}
+
+
+% ======================================================================
+% Enumeraciones (enumerate)
+% ======================================================================
+
+% Copia de enumerate para utilizar el color establecido en \textColor
+% en las enumeraciones que sean necesarias.
+\newlist{enumerateColor}{enumerate}{3} % El 3 es la profundidad recomendada
+                                       % para no perder la formalidad del doc 
+
+% Configuracion global de enumerateColor
+% Enumeracion con el color predeterminado, se debe asegurar de que sea el
+% mismo color del comando \textColor para que el documento se mantenga
+% equilibrado. (Actuamente: OliveGreen)
+% "font=" aplica el estilo a la enumeracion
+% \bfseries para aplicar negritas dentro del formato matematico
+\setlist[enumerateColor]{font=\color{OliveGreen}\bfseries}
+
+% Asignación de numeraciones para cada nivel de enumerateColor
+% Nivel 1: Numeros arabigos con punto 1. 2. 3. ...
+\setlist[enumerateColor,1]{label=\arabic*.}
+% Nivel 2: letras minusculas con parentesis a), b), c) ... z)
+\setlist[enumerateColor,2]{label=\alph*)}
+% Nivel 3: numeros romanos con punto i. ii. iii. ...
+\setlist[enumerateColor,3]{label=\roman*.}
+
+
+% ======================================================================
+% Automatas
+% ======================================================================
+\tikzset{
+    % Estilo para el diseño gris de los autómatas
+    automataGris/.style={
+        ->,                         % Todas las líneas son flechas
+        >=stealth,                  % Tipo de punta de flecha
+        auto,                       % Auto-posicionamiento de etiquetas
+        node distance=1cm,          % Distancia entre nodos
+        every state/.style={        % Estilo de los círculos
+            thick, 
+            fill=gray!10, 
+            minimum size=1.1cm
+        },
+        initial text={}             % Quitamos el texto "start" que señala al
+                                    % estado inicial del automata
+    }, % Coma obligatoria para separar estilos
+    %
+    % Estilo global para ciclos en los automatas
+    % Cuadrante 1: Superior Derecho
+    ciclo_cuadrante1/.style={out=75, in=15, looseness=4},
+    % Cuadrante 2: Superior Izquierdo
+    ciclo_cuadrante2/.style={out=105, in=165, looseness=4},
+    % Cuadrante 3: Inferior Izquierdo
+    ciclo_cuadrante3/.style={out=195, in=255, looseness=4},
+    % Cuadrante 4: Inferior Derecho
+    ciclo_cuadrante4/.style={out=345, in=285, looseness=4}
+}
+
+% ======================================================================
+% Listings (cuadros de codigo/evaluacion)
+% ======================================================================
+
+% Colores modificados para listing
+\lstdefinestyle{gris}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstdefinestyle{naranjoso}{
+    backgroundcolor=\color{sand},
+    commentstyle=\color{commentblue},
+    keywordstyle=\color{sintaxsanddark},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{blue_pigment},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=right,                    
+    numbersep=6pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+% Definicion para que listing acepte vocales con acento y 'ñ'
+\lstset{
+     literate=
+         {á}{{\'a}}1
+         {í}{{\'i}}1
+         {é}{{\'e}}1
+         {ú}{{\'u}}1
+         {ó}{{\'o}}1
+         {Á}{{\'A}}1
+         {Í}{{\'I}}1
+         {É}{{\'E}}1
+         {Ú}{{\'U}}1
+         {Ó}{{\'O}}1
+         {ñ}{{\~n}}1
+         {Ñ}{{\~N}}1                
+}
+
+% Establece de manera predeterminada el estilo de arriba para listing
+\lstset{style=gris}
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ======================================================================
+% Inicio del documento
+% ======================================================================
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ======================================================================
+% Portada del trabajo.
+% 1. Descomentar la linea "\input{recursos/portada}" para incluir la portada.
+% 2. Comentar la linea "\input{recursos/portada}" para excluir la portada.
+% ======================================================================
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\hypersetup{pageanchor=false}
+\input{recursos/portada}
+\hypersetup{pageanchor=true}
+
+\section*{Instalación de Kali Linux}
+\input{ejercicios/instalacion}
+
+
+
+\section*{Actividad}
+
+% Importacion de archivos que contienen las instrucciones y
+% soluciones de los ejercicios que se presentaran en la tarea 
+\begin{enumerateColor}
+    \item \leavevmode\input{ejercicios/ejercicio01}
+    \item \leavevmode\input{ejercicios/ejercicio02}
+    \item \leavevmode\input{ejercicios/ejercicio03}
+    \item \leavevmode\input{ejercicios/ejercicio04}
+    \item \leavevmode\input{ejercicios/ejercicio05}
+    \item \leavevmode\input{ejercicios/ejercicio06}
+    \item \leavevmode\input{ejercicios/ejercicio07}
+\end{enumerateColor}
+
+\section*{Preguntas}
+
+% Importacion de archivos que contienen las instrucciones y
+% soluciones de las preguntas que se presentaran en la tarea 
+\begin{enumerateColor}[start=8]
+    \item \leavevmode\input{ejercicios/ejercicio08}
+    \item \leavevmode\input{ejercicios/ejercicio09}
+    \item \leavevmode\input{ejercicios/ejercicio10}
+    \item \leavevmode\input{ejercicios/ejercicio11}
+    \item \leavevmode\input{ejercicios/ejercicio12}
+    \item \leavevmode\input{ejercicios/ejercicio13}
+    \item \leavevmode\input{ejercicios/ejercicio14}
+\end{enumerateColor}
+
+% ======================================================================
+% Referencias bibliográficas
+% ======================================================================
+\bibliographystyle{ieeetr}
+\nocite{*}
+\bibliography{referencias}
+
+\end{document}

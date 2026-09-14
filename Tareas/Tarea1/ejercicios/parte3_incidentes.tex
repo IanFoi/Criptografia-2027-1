@@ -1,0 +1,84 @@
+% ======================================================================
+% Parte 3: Investigación del incidente
+% ======================================================================
+
+Como equipo de respuesta inicial a incidentes de Perfectópolis, analicen cada uno de los tres incidentes presentados.
+
+% ----------------------------------------------------------------------
+\subsection*{Incidente A: Filtración de base de datos de PerfectID}
+% ----------------------------------------------------------------------
+\textit{Contexto: En internet aparece una base de datos que contiene correos electrónicos y contraseñas de aproximadamente 20,000 usuarios de PerfectID. Se desconoce si las contraseñas estaban almacenadas mediante cifrado, hash o texto plano.}
+
+\begin{enumerateColor}
+    \item \textbf{¿Qué ocurrió?}
+    % TODO: Responder aquí
+A partir de una vulnerabilidad del sistema, un grupo malintencionado obtuvo el acceso a la base de datos de usuarios de PerfectID y filtró los correos electrónicos y contraseñas de 20,000 usuarios. Dado que no se sabe si las contraseñas almacenadas estaban protegidas mediante cifrado, hash o texto plano, en el peor de los casos los atacantes tienen acceso al inicio de sesión (potencialmente de 20,000 usuarios) al sistema de PerfectID así como de otros sistemas en el caso de los usuarios que reutilizan contraseñas en otros sitios públicos o privados.
+    \item \textbf{¿Qué información necesitan investigar?}
+    % TODO: Responder aquí
+	    Es necesario verificar si la base de datos filtrada coincide con datos reales en primer lugar, también se necesita buscar la vulnerabilidad aprovechada para extraer los datos filtrados para parchar el problema. Además, es importante conocer en qué modo estaban almacenadas las contraseñas para clasificar el nivel de riesgo que conlleva la filtración.
+
+    \item \textbf{¿Qué evidencia digital intentarían conservar?}
+    % TODO: Responder aquí
+	    Una copia de la base de datos filtrada en internet, los registros de acceso de los servidores de bases de datos así como un registro del tráfico de red de por lo menos una semana previo a la filtración.
+
+    \item \textbf{¿Qué acción inmediata realizarían?}
+    % TODO: Responder aquí
+	   Bloquear las cuentas de los 20,000 usuarios temporalmente para forzar que dichos usuarios modifiquen su contraseña. Además es importante emitir un comunicado oficial que sea transparente con respecto a la filtración y proporcione un contacto de soporte que apoye a las víctimas a recuperar sus cuentas o que apoye en caso de fraude. 
+
+    \item \textbf{¿Qué medida permitiría evitar que ocurriera nuevamente?}
+    % TODO: Responder aquí
+	    Asegurarse de que las contraseñas estén cifradas con hash de contraseñas con salt para hacer que a pesar de que la base de datos sea filtrada, algo que es muy común que suceda, sea muy complicado o imposible que los atacantes puedan acceder a las contraseñas de los usuarios. También se debe implementar un sistema de autenticación multifactor para el acceso del sistema de manera que se requiera una aprobación extra que los atacantes no la tengan tan fácil para ingresar al sistema. Finalmente, es necesario educar a la población acerca de los peligros de utilizar una contraseña débil o repetir contraseñas en distintos sitios así como asesorarlos en qué hacer como víctimas de robo de credenciales o el robo de sus datos.
+\end{enumerateColor}
+
+% ----------------------------------------------------------------------
+\subsection*{Incidente B: Documento de la Secretaría de Salud sin firma digital}
+% ----------------------------------------------------------------------
+\textit{Contexto: Circula en redes sociales un documento supuestamente emitido por la Secretaría de Salud de Perfectópolis. Dos versiones del mismo documento contienen información diferente. Ninguna cuenta con firma digital.}
+
+\begin{enumerateColor}
+    \item \textbf{¿Qué ocurrió?}
+    % TODO: Responder aquí
+	    Una entidad externa al sistema de la Secretaría de Salud de Perfectópolis emite o modifica un documento que en apariencia es muy similar pero da información diferente; el atacante lo pudo utilizar para emitir desinformación o dirigir a algún sitio malintencionado para recopilar datos. En consecuencia, algunos ciudadanos replican o siguen instrucciones incorrectas.
+
+    \item \textbf{¿Qué información necesitan investigar?}
+    % TODO: Responder aquí
+	    Se debe encontrar en conjunto con la Secretaría de Salud de Perfectópolis cuál es el documento original, qué funcionario o departamento lo emitió inicialmente y a quién estaba dirigido.
+
+    \item \textbf{¿Qué evidencia digital intentarían conservar?}
+    % TODO: Responder aquí
+	    El documento manipulado y el documento original, la mayor cantidad de información del envío del documento original como los metadatos del envío. Además, se requieren los registros de transferencia de archivos del servidor.
+
+    \item \textbf{¿Qué acción inmediata realizarían?}
+    % TODO: Responder aquí
+	    Disponer de un medio oficial seguro mediante el cual la Secretaría de Salud emita un comunicado aclarando la información verídica y desmienta los mensajes falsos del otro documento.
+
+    \item \textbf{¿Qué medida permitiría evitar que ocurriera nuevamente?}
+    % TODO: Responder aquí
+	    Implementar un sistema de firma digital en todos los documentos oficiales emitidos por las dependencias de gobierno garantizando que se pueda rastrear su origen, también se requiere que la comunicación al servidor esté protegida ante el acceso y modificación de externos usando protocolos como el TLS.
+\end{enumerateColor}
+
+% ----------------------------------------------------------------------
+\subsection*{Incidente C: Clasificación sesgada en la plataforma ParticipaPerfecto}
+% ----------------------------------------------------------------------
+\textit{Contexto: Una estudiante descubre que el sistema ParticipaPerfecto clasificó automáticamente varias denuncias sobre problemas de transporte como ``baja prioridad''. La empresa asegura que ``la IA tomó la decisión correctamente según su modelo''.}
+
+\begin{enumerateColor}
+    \item \textbf{¿Qué ocurrió?}
+    % TODO: Responder aquí
+
+    La inteligencia artificial del sistema ParticipaPerfecto clasifica varias denuncias sobre problemas de transporte como un problema de "baja prioridad", de la misma manera el sistema puede potencialmente asignar otros problemas a baja prioridad causando que estos sean aplazados o ignorados a pesar de ser problemas reales. La empresa responsable del entrenamiento de la inteligencia artificial se niega a ser transparente con respecto al proceso de razonamiento que siguió la IA para clasificar los problemas con una baja prioridad argumentando que brindarlo atenta contra su propiedad intelectual.
+
+    \item \textbf{¿Qué información necesitan investigar?}
+    % TODO: Responder aquí
+    La cantidad de reportes de transporte clasificados erróneamente, los parámetros o palabras clave que toma la inteligencia artificial para discriminar la prioridad de las denuncias así como la información con la que fue entrenado el modelo.
+    \item \textbf{¿Qué evidencia digital intentarían conservar?}
+    % TODO: Responder aquí
+	Las bases de datos con los reportes originales de los usuarios junto con la clasificación que le dio la inteligencia artificial, los registros de la plataforma y una copia del contrato con la empresa que provee el modelo.
+    \item \textbf{¿Qué acción inmediata realizarían?}
+    % TODO: Responder aquí
+	    Atender con un equipo humano las denuncias reportadas así como aquellas que hay múltiples denuncias y estén mal clasificadas.
+
+    \item \textbf{¿Qué medida permitiría evitar que ocurriera nuevamente?}
+    % TODO: Responder aquí
+	    Se requiere exigir a la empresa que provee el modelo que someta sus modelos de inteligencia artificial a auditorías para detectar sesgos, además, se requiere de un equipo humano que atienda las decisiones mal clasificadas de los usuarios o las denuncias más repetidas mal clasificadas. 
+\end{enumerateColor}

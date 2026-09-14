@@ -1,0 +1,59 @@
+En esta sección documentamos con algunas imágenes el proceso de instalación de la ISO y la creación de la máquina virtual. Para desarrollar la práctica comenzamos descargando VirtualBox y el Oracle VM VirtualBox Extension Pack, para ello, dado que trabajamos sobre un sistema con Arch Linux podemos realizar la instalación desde la terminal:
+\begin{enumerate}
+    \item Comenzamos ejecutando el comando \texttt{sudo pacman -S virtualbox}.
+    \item Ahora, instalamos el paquete de extensión de Oracle, usando yay para instalarlo del repositorio AUR con la línea \texttt{yay -S virtualbox-ext-oracle}.
+    \item Para poder empezar a trabajar con la máquina virtual, reiniciamos la computadora o cargamos el módulo con \texttt{sudo modprobe vboxdrv}.
+    \item Para poder aprovechar el paquete de extensión y que las máquinas virtuales puedan acceder a dispositivos USB utilizamos \texttt{sudo usermod -aG vboxusers \$USER} para otorgar los permisos necesarios.
+    \item Finalmente verificamos la instalación abriendo VirtualBox en la terminal usando el comando \texttt{virtualbox} y en herramientas agregamos la extensión que instalamos. Se puede verificar que la extensión está configurada correctamente usando el comando \texttt{VBoxManage list extpacks} y verificando que el paquete de expansión indique en la línea \texttt{Usable} el valor \texttt{true}.
+\end{enumerate}
+
+Una vez configuramos la máquina virtual podemos comenzar a instalar Kali Linux, para ello, nos dirigimos a \url{https://www.kali.org/} para descargar la ISO del sitio oficial, seleccionando la imagen recomendada en arquitectura x86\_64.
+
+Una vez descargada, verificamos la integridad de la imagen ISO por medio del hash generado a partir de la descarga. Para ello, utilizando el comando \texttt{sha256sum} junto a la ISO recién descargada verificamos que el resultado sea idéntico al que se encuentra en la sección sum de la página de instalación:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.55\textwidth]{verificacionhash.png}
+    \caption{Comparación entre la sección sum y el resultado de sha256sum.}
+    \label{fig:ver1}
+\end{figure}
+
+Como se ve en la figura \ref{fig:ver1}, ambos resultados coinciden por lo que es totalmente seguro que utilicemos esta ISO.
+
+Ahora, comenzamos la creación de la máquina virtual utilizando la ISO que descargamos. Para ello, creamos una nueva máquina virtual en VirtualBox seleccionando el ícono de \textit{Nueva}. Como es un sistema basado en Debian, lo configuramos como se muestra en la figura \ref{fig:inst1}:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.44\textwidth]{config1.png}
+    \caption{Primeros pasos de la creación de la máquina virtual.}
+    \label{fig:inst1}
+\end{figure}
+
+Al dar clic en siguiente, nos abre un menú para asignar los recursos de la máquina virtual; asignamos valores conforme a la capacidad de nuestro equipo, en este caso, 12\,GB de RAM, 4 núcleos de CPU y 30\,GB de espacio en disco. Toda la información de esta configuración se muestra en un resumen, como se aprecia en la figura \ref{fig:inst2}; para terminar damos clic en \textit{Terminar}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.44\textwidth]{config2.png}
+    \caption{Asignación de recursos y resumen.}
+    \label{fig:inst2}
+\end{figure}
+
+Una vez terminado y antes de encenderla, en la pestaña de configuración es posible asignar memoria de video y activar la aceleración 3D para mejorar el rendimiento, con lo que asignamos los recursos necesarios disponibles en el equipo.
+
+Finalmente, arrancamos la máquina virtual para realizar el proceso de instalación de Kali Linux. Siguiendo las instrucciones realizamos el procedimiento de instalación (figura~\ref{fig:inst3}), seleccionando el entorno de escritorio GNOME y descartando la casilla de Xfce, además de conservar la colección de herramientas marcadas por defecto.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.38\textwidth]{config3.png}
+    \caption{Algunas imágenes de la instalación.}
+    \label{fig:inst3}
+\end{figure}
+
+Una vez terminada la instalación, en la sección de configuración habilitamos el modo puente de red para simular que la máquina virtual está conectada al mismo switch de la tarjeta física de la computadora (figura~\ref{fig:inst4}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.38\textwidth]{config4.png}
+    \caption{Sistema Kali Linux instalado.}
+    \label{fig:inst4}
+\end{figure}

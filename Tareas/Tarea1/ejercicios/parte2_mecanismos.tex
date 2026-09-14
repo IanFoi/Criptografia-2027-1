@@ -1,0 +1,90 @@
+% ======================================================================
+% Parte 2: Mecanismos criptográficos
+% ======================================================================
+
+Para cada una de las situaciones planteadas en Perfectópolis, indiquen qué tecnología criptográfica o mecanismo de seguridad utilizarían y justifiquen su elección (explicando qué problema resuelve y qué problema no resuelve la tecnología seleccionada).
+
+{
+\scriptsize
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4.0cm}|>{\raggedright\arraybackslash}p{3.0cm}|>{\raggedright\arraybackslash}p{2.5cm}|>{\raggedright\arraybackslash}p{5.5cm}|}
+\caption{Selección y justificación de mecanismos criptográficos para Perfectópolis.}
+\label{tab:mecanismos_criptograficos} \\
+\hline
+\rowcolor{backcolour}
+\textbf{Situación} & \textbf{Tecnología propuesta} & \textbf{\hspace{0pt}¿Qué propiedad protege?} & \textbf{Justificación} \\
+\hline
+\endfirsthead
+
+\multicolumn{4}{|c|}{{\bfseries Tabla \thetable{} -- Continuación}} \\
+\hline
+\rowcolor{backcolour}
+\textbf{Situación} & \textbf{Tecnología propuesta} & \textbf{\hspace{0pt}¿Qué propiedad protege?} & \textbf{Justificación} \\
+\hline
+\endhead
+
+\hline 
+\multicolumn{4}{|r|}{{Continúa en la siguiente página...}} \\
+\endfoot
+
+\hline
+\endlastfoot
+
+% Situación A
+\textbf{A.} Guardar las contraseñas de PerfectID. & 
+% TODO: Tecnología propuesta
+Cifrado de contraseñas con \textbf{hash} de contraseñas con \textit{salt} & 
+% TODO: Propiedad que protege
+Confidencialidad & 
+% TODO: Justificación (qué resuelve y qué no resuelve)
+Al cifrar apropiadamente las contraseñas con sistema de hasheo y sal evita que, al filtrarse la base de datos, las contraseñas no puedan ser leídas por el cifrado y que con la \textit{salt} no se pueda recurrir a sistemas de tablas de descifrado para descifrar fácilmente las contraseñas. Sin embargo, esta solución no resuelve que los usuarios utilicen contraseñas débiles o que repitan sus contraseñas en los distintos sitios que utilizan. De la misma manera, no protege a los usuarios de otras formas de acceder sin autorización a las sesiones, pues métodos como robo mediante \textit{phishing} o el robo de sesiones siguen siendo un riesgo.
+\\
+\hline
+% Situación B
+\textbf{B.} Proteger la comunicación entre el navegador del ciudadano y PerfectID. & 
+% TODO: Tecnología propuesta
+\textit{Transport Layer Security} (TLS) & 
+% TODO: Propiedad que protege
+Integridad-Confidencialidad & 
+% TODO: Justificación (qué resuelve y qué no resuelve)
+Cifra los datos mientras que viajan por internet, manteniéndolos fuera del alcance de un atacante en el camino (ataques \textit{Man in the Middle}), asegurando que no pueda acceder a la información o modificarla. Dado que solo se asegura que en el proceso de comunicación entre usuario-servidor sea seguro, este protocolo no protege la información una vez llega al servidor de \textit{PerfectID} ni si el sistema del usuario ya está comprometido con \textit{malware}.\\
+\hline
+% Situación C
+\textbf{C.} Comprobar que un documento gubernamental no fue modificado. & 
+% TODO: Tecnología propuesta
+Función \textbf{hash} como SHA-256 & 
+% TODO: Propiedad que protege
+Integridad & 
+% TODO: Justificación (qué resuelve y qué no resuelve)
+Permite verificar si un archivo fue alterado durante una transferencia comparando el valor original con uno nuevo, pues cualquier cambio en el documento hará que el valor hash sea distinto al original. Sin embargo, esto no asegura nada con respecto al origen del documento, por lo que aún puede ser enviado un documento ilegítimo desde un sistema vulnerado.
+\\
+\hline
+% Situación D
+\textbf{D.} Comprobar quién emitió oficialmente un documento. & 
+% TODO: Tecnología propuesta
+\textbf{Firma digital} & 
+% TODO: Propiedad que protege
+Confidencialidad e Integridad & 
+% TODO: Justificación (qué resuelve y qué no resuelve)
+Ata el documento a la identidad de un funcionario o sistema real que emite el documento oficial; dado que nadie más que el funcionario o la entidad de gobierno puede emitir esa firma, ningún externo debería poder expedir un documento oficial y, de la misma manera, un funcionario o entidad no puede negar haber expedido ese documento. Sin embargo, el contenido del documento sigue estando sin cifrar por lo que queda expuesta su información si es interceptado; además, esto no excluye que pueda ser robado el medio para firmar digitalmente o expedir un documento falso por extorsión o corrupción. \\
+\hline
+% Situación E
+\textbf{E.} Proteger un archivo médico almacenado en un servidor. & 
+% TODO: Tecnología propuesta
+\textbf{Cifrado simétrico} & 
+% TODO: Propiedad que protege
+Confidencialidad & 
+% TODO: Justificación (qué resuelve y qué no resuelve)
+Protege los archivos médicos de manera que, si un atacante accede a la base de datos del servidor, solo puede ver datos sin sentido alguno si no posee la llave para descifrar. Sin embargo, el sistema sigue siendo vulnerable a que se filtre la llave de descifrado por un mal manejo de los usuarios autorizados o por un ataque de ingeniería social o \textit{phishing}.\\
+\hline
+% Situación F
+\textbf{F.} Reducir el riesgo de que una contraseña robada permita ingresar inmediatamente a PerfectID. & 
+% TODO: Tecnología propuesta
+\textbf{Autenticación multifactor} & 
+% TODO: Propiedad que protege
+Confidencialidad, Integridad & 
+% TODO: Justificación (qué resuelve y qué no resuelve)
+Brinda un poco más de seguridad, pues obliga al atacante a necesitar un elemento más para poder acceder a las cuentas de la víctima además de la contraseña que pudo haber sido robada, bloqueando en muchos casos el acceso ilegítimo. No evita que la contraseña sea robada inicialmente ni protege ante ataques de robo de sesiones.\\
+\end{longtable}
+}

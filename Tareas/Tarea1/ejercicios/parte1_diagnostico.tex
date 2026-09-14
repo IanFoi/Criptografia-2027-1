@@ -1,0 +1,86 @@
+% ======================================================================
+% Parte 1: Diagnóstico de seguridad
+% ======================================================================
+
+Analicen el ecosistema de Perfectópolis e identifiquen al menos seis riesgos.
+
+\subsection*{Tabla de Diagnóstico de Riesgos}
+
+{
+\scriptsize
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{1.5cm}|>{\raggedright\arraybackslash}p{1.6cm}|>{\raggedright\arraybackslash}p{2.0cm}|>{\raggedright\arraybackslash}p{2.2cm}|>{\raggedright\arraybackslash}p{2.5cm}|>{\centering\arraybackslash}p{1.0cm}|>{\centering\arraybackslash}p{1.1cm}|>{\raggedright\arraybackslash}p{2.4cm}|}
+\caption{Matriz de diagnóstico de riesgos del ecosistema digital de Perfectópolis.}
+\label{tab:diagnostico_riesgos} \\
+\hline
+\rowcolor{backcolour}
+\textbf{Sistema} & \textbf{Activo} & \textbf{Amenaza} & \textbf{Vulnerabilidad} & \textbf{Consecuencia} & \textbf{C/I/D} & \textbf{Nivel} & \textbf{Medida propuesta} \\
+\hline
+\endfirsthead
+
+\multicolumn{8}{|c|}{{\bfseries Tabla \thetable{} -- Continuación}} \\
+\hline
+\rowcolor{backcolour}
+\textbf{Sistema} & \textbf{Activo} & \textbf{Amenaza} & \textbf{Vulnerabilidad} & \textbf{Consecuencia} & \textbf{C/I/D} & \textbf{Nivel} & \textbf{Medida propuesta} \\
+\hline
+\endhead
+
+\hline 
+\multicolumn{8}{|r|}{{Continúa en la siguiente página...}} \\
+\endfoot
+
+\hline
+\endlastfoot
+% TODO: Rellenar información para Confidencialidad
+\textit{Identidad Digital PerfectID} & Bases de datos de información personal y biométrica de los usuarios, nombres de usuarios y contraseñas. & Filtración o robo de información consecuencia de algún ataque externo. Dado que los usuarios tienden a repetir contraseñas, el robo de contraseñas da pie a ataques en el resto de plataformas de \textit{Perfectópolis}. & Falta de claridad con respecto a la seguridad de las bases de datos y si las contraseñas están o no cifradas. & Se filtra una base de datos con el correo electrónico y contraseñas (potencialmente no cifradas) de 20,000 usuarios de \textit{PerfectID}; un equipo malintencionado puede utilizar la información para acceder a la información de dichos usuarios en el sistema de \textit{Identidad Digital} para obtener datos personales de los usuarios y venderlos en el mercado negro. Además, pueden acceder a otros sistemas en el caso de los usuarios que usan la misma contraseña para otras plataformas. & C & Crítico & Almacenar las contraseñas cifradas mediante \textbf{hash}, implementar \textbf{autenticación multifactor}, además de invertir en campañas para informar a la población acerca del uso de contraseñas seguras, así como de qué hacer ante el robo de información, estafas y a qué autoridades acudir para solucionar problemas de robo de información. \\
+\hline
+% Riesgo 2: Integridad
+% TODO: Rellenar información para Integridad
+Expediente ciudadano digital & Documentos oficiales e información médica. & Expedición o modificación de documentos relacionados a entidades oficiales por parte de externos. & Intercambio de documentos digitales sin alguna medida para comprobar que hayan sido modificados o expedidos por la autoridad competente. & Se expide o modifica un documento en nombre de una entidad supuestamente oficial que indica seguir ciertas instrucciones falsas o ingresar a un portal falso que recopila credenciales, dando pie a ataques. Incertidumbre de qué información proviene de fuentes oficiales y posible encubrimiento de corrupción al modificar documentos oficiales. & I & Alto & Añadir sistemas seguros y confidenciales de \textbf{firmas digitales} para hacer rastreable y seguro el origen de los documentos, así como evitar y ubicar modificaciones malintencionadas. \\
+\hline
+% Riesgo 3: Disponibilidad
+% TODO: Rellenar información para Disponibilidad
+\textit{PerfectID}, Expediente ciudadano digital, \textit{Participa Perfecto}, \textit{RedPerfectWiFi} & Acceso a los dispositivos y a las tecnologías. & Falta de acceso a las plataformas por carecer de dispositivos, ya sea por el ámbito económico, así como por eventualidades como robo, extravío o mal funcionamiento del dispositivo de los ciudadanos. & Falta de acceso a las plataformas por carecer de dispositivos. Ya sea por el ámbito económico así como de eventualidades como robo, extravío o mal funcionamiento del dispositivo de los ciudadanos. & La población menos familiarizada con las tecnologías queda excluida de trámites importantes como registros, información o el sistema de denuncias. El sistema de denuncias es particularmente vulnerable a la disponibilidad cuando se trata de denunciar robos, pues los dispositivos tecnológicos son de los principales objetivos en un robo, con lo que al ser robados complican a la víctima el realizar una denuncia al tener menos acceso a la plataforma. & D & Alto & Mantener alguna forma de acceder a los servicios de manera física, como ventanillas de atención ciudadana. Además de esto, que tanto las plataformas digitales como los establecimientos de atención ciudadana sigan estándares de accesibilidad como los descritos en el \textbf{WCAG}\cite{w3c_wcag}. \\
+\hline
+% Riesgo 4: Autenticación
+% TODO: Rellenar información para Autenticación
+\textit{PerfectID} & Sesiones de cuentas de los ciudadanos. & Robo de sesiones o credenciales de acceso que lleven al robo de información sensible o acceso a otras plataformas. & Reutilización de contraseñas de los usuarios, así como de carecer de sistemas fuertes que den un inicio de sesión seguro. & Acceso no autorizado a servicios de la víctima, así como otras plataformas de gobierno o de servicios externos, lo que da paso al robo de información personal, credenciales de acceso y cuentas de servicios externos que llevan a posible robo de identidad digital. & C-I & Crítico & Implementar sistemas seguros con contraseñas cifradas y \textbf{autenticación de doble factor}, además de prevención ante el robo de sesiones. En lo posible, mantener un control de la seguridad de manera que se exija a gobiernos externos y a empresas que las plataformas externas a las que accedan los usuarios tengan un mínimo de seguridad, pues al repetir contraseñas si estas son vulneradas los sistemas de \textit{Perfectópolis} siguen corriendo peligro por muy robustos que sean sus sistemas. Dar a conocer a la población medidas de seguridad básicas como el uso de distintas contraseñas por sistema, qué hacer y con qué autoridad acudir ante el robo de la identidad digital.\\
+\hline
+% Riesgo 5: Privacidad
+% TODO: Rellenar información para Privacidad
+\textit{Cámaras inteligentes de seguridad} - \textit{PerfectWiFi} & Datos personales, datos biométricos y datos de navegación. & Explotación comercial y sobrevigilancia de los ciudadanos. & Falta de transparencia del tratamiento de los datos recopilados y el abuso de estos datos para fines distintos al objetivo por el que fueron recopilados. & Se utilizan los sistemas de vigilancia y la recopilación de datos de \textit{PerfectWiFi} para buscar a los criminales; sin embargo, un gobierno o entidades independientes pueden acusar falsamente a un ciudadano que va en contra de sus intereses, o a un grupo de ellos, para ser perseguidos injustamente, y dado que el sistema mantiene una vigilancia masiva, el acusar falsamente para que un ciudadano sea perseguido se vuelve una opción factible para deshacerse de un enemigo. & C & Medio & Si bien un sistema de vigilancia sumamente eficiente puede ser demasiado útil, es necesario que este esté acompañado de un sistema legal sólido y justo, lo cual es muy complicado, incluso imposible, de conseguir. Una solución sería ser transparentes con el uso de los datos de las redes WiFi y los sistemas de seguridad, así como proporcionar medios que aseguren la no persecución política. \\
+\hline
+% Riesgo 6: Inteligencia Artificial / Ética
+% TODO: Rellenar información para IA / Ética
+\textit{Plataforma ParticipaPerfecto} - \textit{Cámaras inteligentes de seguridad} & Seguridad ciudadana. & Discriminación sistemática de grupos vulnerables por sesgos algorítmicos. & Falta de transparencia del desarrollo de los algoritmos de reconocimiento facial e inteligencia artificial. Los algoritmos suelen estar diseñados por países del norte global con sesgos ideológicos, por lo que se necesita un buen \textit{fine tuning} o crear un modelo de cero. & Los modelos de inteligencia artificial y reconocimiento facial están entrenados con sesgos ideológicos, con lo que es posible que los sistemas caigan en estos mismos sesgos haciendo que minorías (o quienes los creadores del sistema consideran minorías) sean más vulnerables a ver sus reportes no respondidos o que se asuma su culpabilidad consecuencia de los sesgos. & I & Medio & De nuevo, este problema depende muchísimo de la solidez del sistema judicial de \textit{Perfectópolis}. Al no poder confiar en que este sea un sistema 100\% justo, la única solución fuera de no implementar los sistemas es realizar un \textit{fine tuning} o desarrollar un modelo o algoritmos propios que contengan la visión de una población latinoamericana, evitando caer en sesgos ideológicos. \\
+\end{longtable}
+}
+\subsection*{Justificación de los niveles de riesgo asignados}
+
+% TODO: Justificar brevemente por qué consideran que cada riesgo tiene el nivel asignado (Bajo, Medio, Alto, Crítico).
+\begin{enumerateColor}
+    \item \textbf{Riesgo 1 (Confidencialidad):} 
+    % TODO: Justificación aquí
+	Al tener acceso a la información de acceso de múltiples usuarios que pueden repetir sus credenciales de acceso, hace que los otros sistemas de \textit{Perfectópolis}, así como sistemas ajenos, sean vulnerados y la información de los usuarios pueda ser robada. El tener acceso a prácticamente toda la información de los ciudadanos es un problema crítico porque da pie al robo de identidad, estafas o extorsión y otra serie de delitos que pueden afectar gravemente la vida de la población.
+
+    \item \textbf{Riesgo 2 (Integridad):} 
+    % TODO: Justificación aquí
+	El problema no es crítico siempre y cuando \textit{Perfectópolis} tenga otros medios para comunicar la veracidad de los documentos o tachar de inválidos los documentos falsificados o modificados para evitar que la población caiga en información falsa; aún con esto, esta solución implicaría una redundancia y despilfarro de recursos impresionante. Además, el hecho de que un ente externo pueda modificar la información que llega a la población pone en alto peligro a la población al no saber a quién confiarle su información y potencialmente entregar información a entes maliciosos.
+
+
+    \item \textbf{Riesgo 3 (Disponibilidad):} 
+    % TODO: Justificación aquí
+	El problema puede variar de nivel de riesgo según la distribución de los dispositivos que aseguren el acceso a la población a los sistemas de \textit{Perfectópolis}; sin embargo, no puede desaparecer tanto por la posibilidad de robo, extravío o descompostura de los dispositivos, así como de la dificultad de cierto sector de la población a la que le pueda costar trabajo adoptar las tecnologías o tener un total rechazo hacia ellas. Considero que es un riesgo alto pues puede llegar a invisibilizar a aquellos que no tengan acceso a las tecnologías o complicar los trámites a quienes las tienen pero les cuesta trabajo utilizarlas. Además, como lo mencioné en la tabla, para el sistema de denuncias puede llegar a ser redundante, pues al carecer de un dispositivo para acceder al sistema de denuncias porque fue robado, es imposible denunciar el propio robo. 	
+    \item \textbf{Riesgo 4 (Autenticación):} 
+    % TODO: Justificación aquí
+	De manera similar al problema de confidencialidad, el que el acceso no esté asegurado por sistemas que impidan el robo de credenciales o sesiones de los usuarios hace que el problema sea un riesgo crítico por lo común que puede llegar a ser que la población en general repita contraseñas o que utilice contraseñas poco seguras, así como el impacto que conlleva que los atacantes ataquen otros sistemas de \textit{Perfectópolis} o sistemas externos que, en una sociedad altamente digitalizada, hace que se robe prácticamente toda la información y la vida de una persona.
+    \item \textbf{Riesgo 5 (Privacidad):} 
+    % TODO: Justificación aquí
+	Considero que en este caso el riesgo depende profundamente del sistema judicial y de gobierno de \textit{Perfectópolis} debido a que, si no existe la necesidad de tener perseguidos políticos o tener un sistema que defienda y defina apropiadamente a los presuntos criminales, el riesgo de una sobrevigilancia es medio o incluso bajo. Sin embargo, haciendo un símil con sociedades ya conocidas, puedo intuir que esta tarea es muy complicada hasta para una utopía como \textit{Perfectópolis}; por ello, considero que el riesgo es medio o incluso puede pasar a alto si se da una sociedad como la de México, en la que múltiples órganos utilizan la información de redes y vigilancia para deshacerse de objetivos que obstaculizan sus acciones.
+
+    \item \textbf{Riesgo 6 (Inteligencia Artificial / Ética):} 
+    % TODO: Justificación aquí
+	De la misma forma que el punto anterior, las consecuencias de caer en un sesgo ideológico con un sistema judicial y político sólido son bajas pues se soluciona al momento de juzgar apropiadamente al potencial criminal, con lo que con un sistema sólido este riesgo sería bajo, pues aún se cae en los sesgos pero las consecuencias no son graves. Sin embargo, considero que es muy difícil, prácticamente imposible, brindar este sistema perfecto hasta en una utopía por lo que el riesgo escala conforme más común sea que el sistema caiga en estos sesgos y qué tan sólido sea el sistema para sentenciar correctamente a alguien como criminal. Suponiendo que \textit{Perfectópolis} es más o menos justo, supondría que el riesgo es medio, aunque perfectamente podría escalar a alto.
+
+\end{enumerateColor}
