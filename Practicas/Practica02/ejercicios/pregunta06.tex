@@ -1,4 +1,13 @@
 Investiga 5 softwares no mencionados en la práctica que sirvan para el análisis de comunicaciones.
 
 \textbf{Respuesta:}
+Excluyendo las herramientas vistas en la práctica (\texttt{ping}, \texttt{nslookup}, \texttt{traceroute}, \texttt{whois}, \texttt{sublist3r}, \texttt{subfinder}, \texttt{findomain}, \texttt{dnsmap}, \texttt{dnsrecon} y \texttt{nmap}), existen otros cinco softwares fundamentales para la captura, inspección y análisis de comunicaciones de red:
+
+\begin{enumerateColor}
+    \item \textbf{Wireshark:} Es el analizador de protocolos de red con interfaz gráfica más utilizado a nivel mundial~\cite{wireshark_guide}. Permite capturar el tráfico en tiempo real a nivel de interfaz de red, filtrar paquetes con precisión milimétrica mediante su potente lenguaje de filtros, reconstruir flujos completos de sesiones TCP/UDP e inspeccionar cabeceras en cientos de protocolos~\cite{sanders_packet_analysis}.
+    \item \textbf{tcpdump:} La herramienta clásica por excelencia de línea de comandos para captura y análisis de paquetes basada en \texttt{libpcap}. Por su bajo consumo de recursos y ausencia de entorno gráfico, es el estándar indispensable para capturar tráfico en servidores remotos y guardar las trazas en archivos \texttt{.pcap} aplicando filtros de tipo BPF (\textit{Berkeley Packet Filter}).
+    \item \textbf{Zeek (anteriormente Bro):} Un monitor y analizador de seguridad de red orientado a eventos y comportamiento~\cite{zeek_ids}. A diferencia de un sniffer convencional que solo graba paquetes crudos, Zeek interpreta el tráfico y genera registros estructurados de alto nivel para transacciones web (HTTP), consultas DNS, certificados SSL/TLS y sesiones SSH.
+    \item \textbf{Bettercap:} Un entorno de trabajo completo y moderno para el análisis y auditoría de seguridad en redes cableadas e inalámbricas~\cite{bettercap_framework}. Permite realizar análisis de intermediario (\textit{Man-in-the-Middle}), auditorías de tráfico ARP, DNS y DHCP en tiempo real, así como la inspección y manipulación de flujos de datos.
+    \item \textbf{Suricata:} Un motor de inspección profunda de paquetes (\textit{Deep Packet Inspection}) de código abierto con arquitectura multihilo. Funciona tanto para el monitoreo de seguridad de red (NSM) como de sistema de detección y prevención de intrusiones (IDS/IPS), permitiendo analizar patrones de comunicación maliciosos a alta velocidad.
+\end{enumerateColor}
 

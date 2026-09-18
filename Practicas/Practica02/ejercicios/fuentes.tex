@@ -1,0 +1,8 @@
+\subsection*{Identificación de fuentes de información}
+% ¿Qué fuentes pueden aportar información valiosa y veraz?
+
+El uso de las herramientas \texttt{ping}, \texttt{nslookup}, \texttt{traceroute}, \texttt{whois}, \texttt{sublist3r}, \texttt{subfinder}, \texttt{findomain}, \texttt{dnsmap}, \texttt{dnsrecon} y \texttt{nmap} nos permite recopilar información veraz y pública sobre la infraestructura de los servicios que queremos analizar.
+
+A partir de la información obtenida, podemos contrastarla con bases de datos oficiales de vulnerabilidades como la \textit{National Vulnerability Database} (NVD)~\cite{nvd_database}, la lista de Common Vulnerabilities and Exposures (CVE)~\cite{mitre_cve} y la Exploit Database~\cite{exploit_db} para buscar fallos de seguridad conocidos según los servicios y versiones detectadas. Por otro lado, la propiedad de los dominios, los bloques de red y la asignación de IPs se puede verificar en fuentes y registros oficiales como LACNIC~\cite{lacnic}, IANA~\cite{iana_root_db} y NIC México~\cite{nic_mexico}. Además, la validez técnica de los registros de correo y seguridad que analizamos (como SPF, DMARC o DNSSEC) se fundamenta en los estándares y documentos RFC de la IETF~\cite{rfc3912_whois, rfc4033_dnssec, rfc7208_spf, rfc7489_dmarc}.
+
+Finalmente, si quisiéramos hacer un pentesting profesional deberíamos seguir los estándares y metodologías descritos en guías como NIST SP 800-115~\cite{nist_sp800_115}, el estándar PTES~\cite{ptes_standard}, la guía de pruebas OWASP WSTG~\cite{owasp_wstg} y la matriz de tácticas de reconocimiento de MITRE ATT\&CK~\cite{mitre_attack_recon}.

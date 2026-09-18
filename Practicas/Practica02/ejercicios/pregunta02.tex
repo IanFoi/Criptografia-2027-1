@@ -2,3 +2,19 @@ Respecto a la pregunta anterior. ¿Cómo funcionan? ¿Para qué sirven?
 
 \textbf{Respuesta:}
 
+\textbf{¿Cómo funcionan?}
+Los protocolos de red operan bajo el principio de encapsular por capas y el intercambio de Unidades de Datos de Protocolo. Cada capa añade una cabecera con metadatos de control. De acuerdo con Tanenbaum y Wetherall~\cite{tanenbaum_redes}, todo protocolo se basa en tres componentes esenciales:
+\begin{enumerateColor}
+    \item \textbf{Sintaxis:} Define la estructura y formato de los bloques de datos, indicando el orden exacto y la longitud en bits de cada campo dentro del paquete.
+    \item \textbf{Semántica:} Determina el significado específico de cada campo o patrón de bits, y las acciones o respuestas que cada host debe ejecutar al recibirlo (por ejemplo, el saludo de tres vías \textit{SYN, SYN-ACK, ACK} en TCP).
+    \item \textbf{Temporización (Sincronización):} Establece el control de velocidad para la transmisión, la gestión de temporizadores (\textit{timeouts}), el control de flujo y la retransmisión de paquetes perdidos.
+\end{enumerateColor}
+
+\textbf{¿Para qué sirven?}
+Buscan permitir la interoperabilidad global entre sistemas y dispositivos con diferente arquitectura, hardware y sistemas operativos~\cite{rfc1122_comm_layers}. En particular, sirven para:
+\begin{itemizeColor}
+    \item \textbf{Garantizar la entrega correcta de datos:} Detectar y corregir errores de transmisión, reordenar paquetes que llegan fuera de secuencia y regular la velocidad para no saturar los enlaces intermediarios.
+    \item \textbf{Encaminar y multiplexar tráfico:} Dirigir los datos a través de rutas eficientes hacia su destino y asociar cada flujo de comunicación al proceso o aplicación local correcto mediante puertos lógicos.
+    \item \textbf{Proteger la información:} Establecer canales cifrados y autenticados para mitigar ataques de intermediario, espionaje o suplantación de identidad.
+\end{itemizeColor}
+

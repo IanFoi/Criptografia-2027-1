@@ -1,0 +1,227 @@
+\subsection*{Análisis}
+% Generar datos de inteligencia a partir de todos los datos obtenidos, identificando relaciones estos que hagan y posibles vulnerabilidades. 
+
+A partir de los reportes generados por nuestro script \texttt{pentesting.sh}, podemos realizar un análisis de amenazas para los cinco dominios analizados: \texttt{unam.mx}, \texttt{pemex.com}, \texttt{gob.mx}, \texttt{ipn.mx} y nuestro objetivo de pruebas elegido, \texttt{hackthissite.org}. Todo este análisis va apegado conforme a las bases de datos oficiales de vulnerabilidades como la NVD~\cite{nvd_database}, el catálogo CVE~\cite{mitre_cve} y Exploit-DB~\cite{exploit_db}:
+
+% ======================================================================
+% UNAM
+% ======================================================================
+\subsubsection*{1. Dominio: \texttt{unam.mx}}
+
+\begin{itemizeColor}
+    \item \textbf{Infraestructura y balanceo de carga:} 
+    A diferencia de otros objetivos, los sistemas centrales de la UNAM resuelven a cuatro direcciones IPv4 activas (\texttt{132.248.166.17}, \texttt{.18}, \texttt{.19} y \texttt{.20}). Esto probablemente esté hecho para distribuir y balancear la alta carga de peticiones concurrentes hacia el portal principal.
+    \item \textbf{Servicios expuestos y versiones (Nmap):}
+    El escaneo de puertos detectó servicios web diferenciados según el puerto:
+\begin{lstlisting}
+PORT    STATE SERVICE  VERSION
+80/tcp  open  http     Apache httpd 2.4.51 ((Unix))
+443/tcp open  ssl/http nginx 1.29.5
+\end{lstlisting}
+		Podemos ver el servidor web Apache httpd 2.4.51 en el puerto 80 y Nginx 1.29.5 en el puerto 443 operando como proxy inverso y terminador SSL. Al contrastar la versión de Apache en la \textit{National Vulnerability Database} (NVD)~\cite{nvd_database}, identificamos dos vulnerabilidades importantes:
+    \begin{enumerateColor}
+        \item \textbf{CVE-2021-44790 (CVSS 9.8 Crítico)}~\cite{cve_2021_44790}: Desbordamiento de búfer (\textit{buffer overflow}) en el módulo \texttt{mod\_lua} que podría permitir una denegación de servicio o la ejecución remota de código.
+        \item \textbf{CVE-2021-44224 (CVSS 7.5 Alto)}~\cite{cve_2021_44224}: Desreferencia a un puntero nulo en \texttt{mod\_proxy} que puede ser provocada por peticiones malformadas, forzando la caída del servicio.
+    \end{enumerateColor}
+
+    \item \textbf{Exposición de información en WHOIS e Ingeniería Social:}
+    Al utilizar WHOIS vemos que deja expuesta la información de los contactos administrativo y técnico (nombres completos del personal de la DGTIC). Si bien es información pública en registros institucionales, esta información podría ser aprovechada por un atacante para planear ataques de ingeniería social, intentando suplantar a las autoridades ante el personal técnico para obtener accesos indebidos.
+
+    \item \textbf{Autenticación de correo y vulnerabilidad a Spoofing (DMARC):}
+    De \texttt{dnsrecon} se extrajo la siguiente política de correo:
+\begin{lstlisting}
+TXT _dmarc.unam.mx v=DMARC1; p=none; rua=mailto:rua_dmarc@unam.mx; ruf=mailto:reporterua_dmarc@unam.mx; fo=0:1;
+\end{lstlisting}
+    De acuerdo con el RFC 7489~\cite{rfc7489_dmarc}, el parámetro \texttt{p=none} indica que los proveedores receptores de correo deben dejar pasar a la bandeja de entrada normal los mensajes que no superen las pruebas de autenticación SPF o DKIM, limitándose únicamente a mandar un reporte. Esto hace que el dominio \texttt{unam.mx} sea vulnerable a ataques de suplantación de correo (\textit{email spoofing}), facilitando fraudes y engaños hacia sus usuarios.
+
+    \item \textbf{Superficie de ataque en subdominios y Shadow IT:}
+    Se descubrieron 4664 subdominios únicos. Si se hace un análisis de los nombres y las IP se pueden encontrar sitios web creados para eventos o congresos pasados como, por ejemplo, \texttt{36congresociss2019.unam.mx} que continúan en línea sin mantenimiento evidente, dándonos un vector de ataque si es que estos subdominios no son mantenidos apropiadamente o eliminados.
+
+    \item \textbf{Canales de contacto y reporte para divulgación responsable:}
+    Para notificar formalmente las vulnerabilidades identificadas, la institución dispone de los siguientes canales de coordinación:
+    \begin{itemizeColor}
+        \item \textbf{UNAM-CERT (Equipo de Respuesta a Incidentes de Seguridad en Cómputo):} Adscrito al Departamento de Seguridad en Cómputo de la Dirección General de Cómputo y de Tecnologías de Información y Comunicación (DGTIC). Punto de contacto principal para reportes de incidentes y brechas: correo \texttt{cert@unam.mx} y portal oficial de reporte en línea en \url{https://www.seguridad.unam.mx/}.
+        \item \textbf{Contactos técnicos y administrativos (WHOIS):} Personal responsable de la operación de red registrado ante NIC México en la DGTIC (Circuito Exterior s/n, Ciudad Universitaria, Coyoacán, CDMX).
+        \item \textbf{Buzones de telemetría y reportes forenses DMARC:} Cuentas receptoras configuradas en los registros DNS para anomalías de correo: \texttt{rua\_dmarc@unam.mx} y \texttt{reporterua\_dmarc@unam.mx}.
+    \end{itemizeColor}
+\end{itemizeColor}
+
+% ======================================================================
+% PEMEX
+% ======================================================================
+\subsubsection*{2. Dominio: \texttt{pemex.com}}
+
+\begin{itemizeColor}
+    \item \textbf{Infraestructura y direccionamiento:}
+    Resuelve a una dirección IPv4 pública (\texttt{200.23.91.20}) administrada directamente por Petróleos Mexicanos bajo el segmento \texttt{200.23.91.0/24}.
+
+    \item \textbf{Protección perimetral y detección de WAF (F5 BIG-IP):}
+    Aunque Nmap reporta los puertos 80/tcp y 443/tcp abiertos con servicios genéricos, la captura de cabeceras HTTP durante el escaneo arrojó firmas características de cookies de sesión:
+\begin{lstlisting}
+PORT    STATE SERVICE   VERSION
+80/tcp  open  http
+443/tcp open  ssl/https
+Set-Cookie: PMX_Cookie=!FFsUDrWbLRwc...; path=/; Httponly
+Set-Cookie: f5avraaaaaaaaaaaaaaaa_session_=DJEJKHDC...; HttpOnly;
+Set-Cookie: TS0136b7a5=01d42166bbcc21e5...; Path=/;
+\end{lstlisting}
+		Las cookies con prefijos \texttt{f5avr...}, \texttt{TS...} y el nombre de la organización demuestran la presencia de un balanceador y cortafuegos de aplicaciones web (\textit{WAF}) \textbf{F5 Networks BIG-IP}. Si bien este equipo filtra ataques comunes, la infraestructura F5 ha presentado vulnerabilidades críticas documentadas en NVD (como \textbf{CVE-2022-1388}~\cite{cve_2022_1388} y \textbf{CVE-2023-46747}~\cite{cve_2023_46747}) que permiten la omisión de autenticación en consolas de gestión y la ejecución remota de comandos si las interfaces administrativas quedan expuestas.
+
+    \item \textbf{Autenticación de correo (DMARC):}
+\begin{lstlisting}
+TXT _dmarc.pemex.com v=DMARC1;p=quarantine;adkim=s;aspf=s;fo=1;ri=3600;pct=100;rua=mailto:reportesdmarc@pemex.com;ruf=mailto:reportesdmarc@pemex.com
+\end{lstlisting}
+    A diferencia de la UNAM, Pemex implementa una política robusta con \texttt{p=quarantine} al 100\% de los correos (\texttt{pct=100}) y alineación estricta tanto en DKIM (\texttt{adkim=s}) como en SPF (\texttt{aspf=s}). Esto ordena que cualquier correo que falsifique el dominio sea automáticamente canalizado a la carpeta de correo no deseado, reduciendo drásticamente el riesgo de \textit{spoofing}.
+
+    \item \textbf{Exposición de entornos de desarrollo y APIs en subdominios:}
+    El script identificó 284 subdominios únicos (125 activos). Entre ellos destacan entornos de desarrollo y control de calidad expuestos públicamente hacia Internet:
+    \begin{itemizeColor}
+        \item \texttt{api-cloud-des.pemex.com} y \texttt{ase3-digital-des.pemex.com} (Entornos de Desarrollo).
+        \item \texttt{api-cloud-qa.pemex.com} y \texttt{ase3-digital-qa.pemex.com} (Entornos de Pruebas / QA).
+        \item APIs comerciales directas (\texttt{api.pemex.com}, \texttt{apicomercializadores.pemex.com}) y servicios filiales en otros rangos de IP (\texttt{api.gasbienestar.pemex.com} en \texttt{187.218.217.12}).
+    \end{itemizeColor}
+    Estos servidores de prueba representan un riesgo considerable, ya que suelen contar con versiones preliminares, políticas de contraseñas débiles o mensajes de depuración activos.
+
+    \item \textbf{Canales de contacto y reporte para divulgación responsable:}
+    Para reportar las vulnerabilidades detectadas en la información del script o en una auditoría de seguridad más profunda, se cuenta con los siguientes canales:
+    \begin{itemizeColor}
+        \item \textbf{CSIRT Pemex / Gerencia de Tecnologías de Información y Ciberseguridad:} Es el equipo operativo de ciberseguridad industrial y corporativa de Petróleos Mexicanos. Su canal de contacto técnico es \texttt{seguridad.informatica@pemex.com}.
+        \item \textbf{Buzón directo de seguridad DMARC:} Correo institucional para incidentes y reportes agregados/forenses de tráfico de correo: \texttt{reportesdmarc@pemex.com} (extraído de los parámetros \texttt{rua} y \texttt{ruf} de su registro DMARC).
+        \item \textbf{Contacto corporativo (WHOIS):} Oficinas Centrales de Petróleos Mexicanos, Av. Marina Nacional 329, Col. Petróleos Mexicanos, Alcaldía Miguel Hidalgo, C.P. 11311, Ciudad de México.
+    \end{itemizeColor}
+\end{itemizeColor}
+
+% ======================================================================
+% GOB.MX
+% ======================================================================
+\subsubsection*{3. Dominio: \texttt{gob.mx}}
+
+\begin{itemizeColor}
+    \item \textbf{Infraestructura de red y direccionamiento troncal:}
+	    El portal central resuelve a la dirección IPv4 pública \texttt{207.249.122.223}, perteneciente al bloque institucional \texttt{207.248.0.0/15} (\texttt{inetnum: 207.249.96.0/19}) registrado ante LACNIC~\cite{lacnic} y operado en la infraestructura troncal de Bestel Clientes (\texttt{bestelclientes.com.mx}) y Cogent Communications (\texttt{atlas.cogentco.com}). En las pruebas de conectividad obtuvimos una latencia media de $37.97$ ms sin pérdida de paquetes ($0\%$). En el rastreo de ruta (\texttt{traceroute}), a partir del salto 16 los enrutadores descartan los paquetes ICMP (\texttt{* * *}), evidenciando filtrado perimetral estricto.
+
+    \item \textbf{Servicios expuestos y buenas prácticas de ocultamiento (Nmap):}
+    El escaneo de puertos sobre la IP \texttt{207.249.122.223} arrojó únicamente los dos servicios web estándar:
+\begin{lstlisting}
+PORT    STATE SERVICE  VERSION
+80/tcp  open  http     nginx
+443/tcp open  ssl/http nginx
+\end{lstlisting}
+    A diferencia de otros objetivos que exponen la versión exacta del software (como Apache 2.4.51 en la UNAM o HAProxy en HackThisSite), la administración de \texttt{gob.mx} suprime el número de versión de Nginx en las cabeceras HTTP, lo que evita que atacantes identifiquen directamente vulnerabilidades específicas asociadas a versiones desactualizadas.
+
+    \item \textbf{Gestión de dominio de segundo nivel y servidores raíz (WHOIS y DNS):}
+    La consulta WHOIS muestra que la titularidad y los contactos administrativos y técnicos pertenecen directamente a \textit{Network Information Center, S.A. de C.V.} (NIC México, Monterrey, N.L.). Esto se debe a que \texttt{gob.mx} opera formalmente como un dominio de segundo nivel dentro del ccTLD \texttt{.mx}, reservado para el Estado mexicano. Los servidores de nombres autoritativos corresponden a la infraestructura raíz nacional (\texttt{m.mx-ns.mx}, \texttt{e.mx-ns.mx}, \texttt{x.mx-ns.mx}, etc.), los cuales exponen la versión de BIND en sus respuestas DNS.
+
+    \item \textbf{Políticas de autenticación de correo y ausencia de DMARC:}
+    En la enumeración con \texttt{dnsrecon} se extrajo el siguiente registro de correo:
+\begin{lstlisting}
+TXT gob.mx v=spf1 -all
+\end{lstlisting}
+    El parámetro \texttt{-all} implementa un rechazo estricto (\textit{Hard Fail}) mediante SPF~\cite{rfc7208_spf}, indicando que el dominio raíz desnudo \texttt{gob.mx} no autoriza a ningún servidor en el mundo para emitir correos en su nombre. Sin embargo, al consultar los registros DMARC (\texttt{\_dmarc.gob.mx}) se constata que \textbf{no existe una política DMARC publicada}. De acuerdo con el RFC 7489~\cite{rfc7489_dmarc}, la ausencia de DMARC deja la decisión de rechazo al arbitrio exclusivo del filtro antispam del destinatario y priva a la organización de los mecanismos de telemetría y reportes forenses agregados (\texttt{rua}) para detectar campañas de suplantación que utilicen su nombre.
+
+    \item \textbf{Proliferación masiva de subdominios, saturación del script y riesgos críticos de seguridad:}
+    \begin{itemizeColor}
+        \item \textbf{Origen de la gran cantidad de subdominios:} 
+        A diferencia de los demás dominios de la práctica (que corresponden a una universidad o a una empresa específica), \texttt{gob.mx} funciona como la sombrilla digital de toda la Administración Pública Federal de México. Alberga todas las secretarías de Estado (Gobernación, Hacienda, Relaciones Exteriores, Bienestar, Salud, Educación, etc.), cientos de órganos desconcentrados, institutos y comisiones reguladoras (SAT, IMSS, ISSSTE, CONAHCYT, INEGI, PROFECO, CFE, etc.), poderes de la unión, portales de trámites ciudadanos masivos (CURP, cédulas profesionales, pasaportes, becas), así como campañas temporales, foros y micrositios creados a lo largo de sucesivos sexenios. En los registros públicos de transparencia de certificados (Certificate Transparency) y zonas DNS, \texttt{gob.mx} acumula decenas de miles de subdominios.
+        
+        \item \textbf{Impacto en la ejecución del script y motivación de la bandera \texttt{-s}:}
+        Al ejecutar el script \texttt{pentesting.sh} completo sobre \texttt{gob.mx}, las herramientas pasivas (\texttt{subfinder}, \texttt{sublist3r}, \texttt{findomain}) recopilan decenas de miles de nombres. Posteriormente, al iterar con \texttt{dig} para verificar cuáles subdominios tienen IP activa, el proceso toma varias horas. Este comportamiento demostró en la práctica la necesidad de implementar una bandera como \texttt{-s, --skip-subdomains}, permitiendo omitir esta fase en infraestructuras gubernamentales masivas y enfocar el análisis en los servicios principales. Esto permite notar que la seguridad de un sistema también se puede ver tanto afectada como beneficiada por la magnitud del mismo: dado que los subdominios son tantos, la complejidad de analizar cada uno de ellos en búsqueda de un vector de ataque es tan alta que puede dificultar un escaneo superficial; sin embargo, este aspecto suele jugar en contra, pues una superficie tan dispersa incrementa la probabilidad de puntos ciegos.      
+        \item \textbf{Riesgos de seguridad de una superficie de subdominios hipermasiva:}
+        \begin{enumerateColor}
+            \item \textbf{Secuestro de subdominios (\textit{Subdomain Takeover}):} Con miles de subdominios creados a lo largo de los años para campañas o micrositios alojados en proveedores en la nube (AWS S3, Microsoft Azure, GitHub Pages, Cloudflare, etc.), es frecuente que un servicio en la nube se cancele pero el registro DNS \texttt{CNAME} permanezca apuntando al identificador antiguo. Un atacante puede registrar dicho recurso en el proveedor de nube y tomar el control total del subdominio legítimo bajo \texttt{.gob.mx} (vulnerabilidad tipificada en OWASP WSTG-CONF-10~\cite{owasp_wstg} y clasificada como CWE-284~\cite{cwe_284}), pudiendo emitir certificados SSL válidos, alojar portales falsos de recaudación o distribuir malware con la credibilidad total del gobierno federal.
+            \item \textbf{Desgobierno tecnológico y Shadow IT:} Cada dependencia, secretaría o proveedor externo subcontratado administra sus propios servidores con niveles de seguridad totalmente dispares. Mientras el portal central \texttt{gob.mx} mantiene buenas defensas perimetrales y versiones ocultas, subdominios secundarios desatendidos pueden estar corriendo manejadores de contenido vulnerables (WordPress, Joomla, Drupal) o versiones antiguas de PHP y bases de datos sin actualizar durante años.
+            \item \textbf{Riesgo de fuga y cruce de cookies de sesión (\textit{Cookie Scope}):} Si alguna aplicación gubernamental en un subdominio o en el dominio raíz define cookies con alcance amplio (\texttt{Domain=.gob.mx}), un fallo de Cross-Site Scripting (XSS) en cualquier subdominio descuidado de un municipio o secretaría menor podría permitir a un atacante capturar tokens de sesión o inyectar cookies fraudulentas hacia aplicaciones críticas del gobierno federal.
+            \item \textbf{Superficie de ataque expansiva y sistemas heredados (\textit{Legacy}):} La enorme cantidad de puntos de entrada dificulta el inventario y monitoreo continuo por parte de los centros de operaciones de seguridad (SOC/CERT gubernamentales), dejando puntos ciegos que facilitan el acceso inicial de adversarios.
+        \end{enumerateColor}
+    \end{itemizeColor}
+
+    \item \textbf{Canales de contacto y reporte para divulgación responsable:}
+    Al tratarse de la plataforma central del Estado mexicano y con miras a mitigar el riesgo de secuestro de subdominios (\textit{subdomain takeover}) y la ausencia de políticas DMARC, los reportes deben dirigirse a las instancias de coordinación de seguridad digital gubernamental:
+    \begin{itemizeColor}
+        \item \textbf{CERT-MX (Guardia Nacional):} Centro Nacional de Respuesta a Incidentes Cibernéticos de la Dirección General Científica de la Guardia Nacional (entidad técnica responsable a nivel federal de coordinar incidentes de ciberseguridad en dependencias gubernamentales e infraestructura crítica). Correo de notificación: \texttt{cert-mx@gn.gob.mx}, atención ciudadana: \texttt{contacto.ciudadano@gn.gob.mx}, teléfono nacional: \texttt{088} y sitio web: \url{https://cert.mx/}.
+        \item \textbf{Mesa técnica de atención y operación de gob.mx:} Coordinación de Estrategia Digital Nacional (CEDN, Oficina de la Presidencia) y Unidad de Gobierno Digital (Secretaría Anticorrupción y Buen Gobierno / Función Pública). Correo de atención y soporte técnico: \texttt{gobmx@funcionpublica.gob.mx}.
+        \item \textbf{Contacto de administración de dominio (WHOIS):} Network Information Center México (NIC México, Monterrey, N.L.) vía \texttt{info@nic.mx}, responsable de la delegación del dominio de segundo nivel \texttt{.gob.mx}.
+    \end{itemizeColor}
+\end{itemizeColor}
+
+% ======================================================================
+% IPN
+% ======================================================================
+\subsubsection*{4. Dominio: \texttt{ipn.mx}}
+
+\begin{itemizeColor}
+    \item \textbf{Infraestructura alojada en la nube (Microsoft Azure):}
+    El dominio principal resuelve a la dirección IP \texttt{20.64.80.120}, la cual pertenece a la red de centros de datos de Microsoft Corporation (\texttt{20.64.0.0/10}).
+
+    \item \textbf{Pasarela de aplicaciones web y servicios (Nmap):}
+\begin{lstlisting}
+PORT    STATE SERVICE  VERSION
+80/tcp  open  http     Microsoft Azure Application Gateway v2
+443/tcp open  ssl/http Microsoft Azure Application Gateway v2
+\end{lstlisting}
+    El servicio expuesto es \textit{Microsoft Azure Application Gateway v2}, actuando como balanceador de carga. Este esquema oculta y aísla los servidores de backend institucionales. El vector de auditoría principal en este tipo de servicio no se enfoca en fallos binarios del software servidor, sino en técnicas de evasión de reglas WAF o en la búsqueda de la IP pública real del backend en caso de que carezca de restricciones de firewall en la nube.
+
+    \item \textbf{Autenticación de correo de máxima seguridad (DMARC):}
+\begin{lstlisting}
+TXT _dmarc.ipn.mx v=DMARC1; p=reject; pct=100; rua=mailto:correo@ipn.mx; ruf=mailto:dmarc_forensic@ipn.mx; fo=1
+\end{lstlisting}
+    El IPN tiene implementada la política más estricta posible: \textbf{\texttt{p=reject} al 100\%}. Todo correo electrónico no autenticado es rechazado y descartado de inmediato por los servidores receptores en el mundo, impidiendo completamente la suplantación de identidad mediante correos falsos con dominio \texttt{@ipn.mx}.
+
+    \item \textbf{Deducción de direccionamiento interno mediante subdominios:}
+    Se encontraron más de 2,200 subdominios activos. Al analizarlos, se descubrió un esquema de nomenclatura secuencial predecible:
+    \begin{itemizeColor}
+        \item \texttt{21.servidor.dev.ipn.mx} $\rightarrow$ \texttt{148.204.111.21}
+        \item \texttt{22.servidor.upev.ipn.mx} $\rightarrow$ \texttt{148.204.111.22}
+        \item \texttt{23.servidor.dev.ipn.mx} $\rightarrow$ \texttt{148.204.111.23}
+        \item \texttt{24.servidor.dev.ipn.mx} $\rightarrow$ \texttt{148.204.111.24}
+    \end{itemizeColor}
+    Este patrón revela que el nombre del subdominio coincide con el último octeto de la dirección IP asignada dentro del segmento institucional \texttt{148.204.111.0/24}. Esto permite deducir la topología de servidores de desarrollo (\texttt{dev}) y de la Unidad Politécnica para la Educación Virtual (\texttt{upev}), facilitando la enumeración de equipos sin necesidad de escaneos masivos.
+
+    \item \textbf{Canales de contacto y reporte para divulgación responsable:}
+    Para la notificación y reporte de estas vulnerabilidades, se cuenta con los siguientes canales institucionales:
+    \begin{itemizeColor}
+        \item \textbf{CSIRT-IPN / Coordinación del Sistema Institucional de Información y las Comunicaciones (CSIIC):} Dependencia central a cargo de la infraestructura tecnológica, la Red de Telecomunicaciones (PoliRed) y la seguridad de la información institucional. Canales de soporte y atención de incidentes: \texttt{ayudapolired@ipn.mx} y \texttt{correo@ipn.mx}.
+        \item \textbf{Buzón forense DMARC:} Correo institucional designado para recepción de reportes de fallas forenses de autenticación: \texttt{dmarc\_forensic@ipn.mx} (obtenido del campo \texttt{ruf} de su registro DMARC).
+        \item \textbf{Ubicación y contacto físico institucional:} Unidad Profesional Adolfo López Mateos, Av. Juan de Dios Bátiz s/n, Col. Nueva Industrial Vallejo, Zacatenco, Alcaldía Gustavo A. Madero, C.P. 07738, Ciudad de México.
+    \end{itemizeColor}
+\end{itemizeColor}
+
+% ======================================================================
+% HACKTHISSITE
+% ======================================================================
+\subsubsection*{5. Dominio a elección: \texttt{hackthissite.org}}
+
+\begin{itemizeColor}
+    \item \textbf{Infraestructura distribuida:}
+    El dominio resuelve a cinco direcciones IPv4 simultáneas (\texttt{137.74.187.100} a \texttt{.104}) alojadas en la infraestructura del proveedor europeo OVH SAS (Roubaix, Francia), distribuyendo el tráfico de los retos y foros.
+
+    \item \textbf{Servicios expuestos y versiones (Nmap):}
+\begin{lstlisting}
+PORT    STATE SERVICE        VERSION
+80/tcp  open  http-proxy     HAProxy http proxy 1.3.1 - 1.9.0
+443/tcp open  ssl/http-proxy HAProxy http proxy 1.3.1 - 1.9.0
+\end{lstlisting}
+    El escaneo reporta el balanceador y proxy inverso \textbf{HAProxy} en versiones intermedias. Al contrastar este rango en la NVD se encuentran vulnerabilidades históricas importantes:
+    \begin{enumerateColor}
+        \item \textbf{CVE-2019-18277 (CVSS 7.5 Alto)}~\cite{cve_2019_18277}: Vulnerabilidad a \textit{HTTP Request Smuggling} generada por discrepancias en el manejo conjunto de las cabeceras \texttt{Transfer-Encoding} y \texttt{Content-Length}.
+        \item \textbf{CVE-2020-11100 (CVSS 8.8 Alto)}~\cite{cve_2020_11100}: Desbordamiento de búfer en el procesamiento de tramas HPACK en conexiones HTTP/2.
+    \end{enumerateColor}
+
+    \item \textbf{Autenticación de correo permisiva (DMARC):}
+\begin{lstlisting}
+TXT _dmarc.hackthissite.org v=DMARC1;p=quarantine;sp=quarantine;fo=0:1:d:s;aspf=r;adkim=r;ri=86400;pct=25;rua=mailto:8rbjyycl@ag.dmarcian.eu;ruf=mailto:8rbjyycl@fr.dmarcian.eu;
+\end{lstlisting}
+    Aunque el dominio declara la política \texttt{p=quarantine}, incluye el modificador \textbf{\texttt{pct=25}}. Esto significa que \textbf{solo el 25\% de los correos suplantados son enviados a cuarentena}, permitiendo que el 75\% restante ingrese libremente a la bandeja de entrada, lo cual representa una configuración permisiva y riesgosa frente a campañas de suplantación, aunque al tratarse de un dominio que no pertenece a una institución pública puede ser que sea menos vulnerable a ataques de \textit{email spoofing}.
+
+    \item \textbf{Mapeo de subdominios:}
+    Se recopilaron 70 subdominios únicos (31 activos), correspondientes a módulos de prácticas, retos de seguridad específicos, servidores IRC de la comunidad y foros de discusión.
+
+    \item \textbf{Canales de contacto y reporte para divulgación responsable:}
+    Por tratarse de una comunidad pública y abierta orientada a la educación en seguridad informática y piratería ética, disponen de diversos mecanismos comunitarios y directos para interactuar con su equipo de administración:
+    \begin{itemizeColor}
+        \item \textbf{Equipo de desarrollo y administración central:} Buzón de contacto con los administradores del proyecto: \texttt{admin@hackthissite.org}.
+        \item \textbf{Formulario oficial de contacto web:} Portal directo para reportes técnicos y contacto con el staff: \url{https://www.hackthissite.org/pages/contact/contact.php}.
+        \item \textbf{Canal IRC en tiempo real:} Red \texttt{irc.hackthissite.org}, canal \texttt{\#hackthissite} (permite establecer contacto inmediato con desarrolladores, operadores de red y moderadores de la plataforma).
+        \item \textbf{Buzón de telemetría DMARC:} Cuentas de reporte del servicio externo de monitoreo dmarcian: \texttt{8rbjyycl@ag.dmarcian.eu} y \texttt{8rbjyycl@fr.dmarcian.eu}.
+    \end{itemizeColor}
+\end{itemizeColor}

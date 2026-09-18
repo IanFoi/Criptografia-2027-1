@@ -1,4 +1,7 @@
 ¿Qué es un sniffer?
 
 \textbf{Respuesta:}
+Un \textit{sniffer} es una herramienta de software o hardware diseñada para interceptar, capturar y decodificar el tráfico de datos que circula a través de una interfaz o segmento de red.
+
+Para operar de forma completa, el sniffer suele colocar la tarjeta de interfaz de red (NIC) en \textbf{modo promiscuo}. En este modo, la tarjeta deja de descartar los paquetes que no van dirigidos a su propia dirección MAC y captura todas las tramas que circulan por el medio físico o inalámbrico compartido. Posteriormente, el software desensambla cada paquete capa por capa (desde el enlace de datos hasta la capa de aplicación), permitiendo inspeccionar las cabeceras y la carga útil (\textit{payload})~\cite{wireshark_guide}.
 

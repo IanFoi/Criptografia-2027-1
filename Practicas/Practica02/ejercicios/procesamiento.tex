@@ -1,0 +1,10 @@
+\subsection*{Procesamiento}
+% Dar formato a toda la información sin filtrar obtenida en la fase anterior. En caso de querer obtener más información explicar el posible uso de la misma, así como su relevancia.
+
+Filtramos la información cruda de las herramientas limpiándola del ruido y comentarios siguiendo las siguientes estrategias para facilitar la lectura e interpretación del resultado:
+
+\begin{itemizeColor}
+    \item \textbf{Limpieza de texto:} En las consultas de WHOIS filtramos mediante expresiones regulares los avisos de privacidad y licencias para quedarnos solo con los datos de contacto, fechas y servidores de nombres. De igual forma, en las IPs extraemos exclusivamente los bloques CIDR y rangos de red asignados. Además, en las pruebas de conectividad con \texttt{ping} filtramos el texto completo para aislar directamente el porcentaje de paquetes perdidos y las estadísticas de latencia (mínima, media y máxima).
+    \item \textbf{Normalización y verificación de subdominios:} Al combinar herramientas se generan algunos resultados repetidos. El script los unifica, elimina duplicados con \texttt{sort -u}, descarta aquellos que ya no resuelven a una IP activa mediante \texttt{dig} y les da formato de tabla. Además, con la bandera \texttt{-n} limitamos la cantidad de filas mostradas para que el reporte no se vuelva excesivamente largo, o podemos prescindir completamente de este paso mediante \texttt{-s} en dominios muy extensos.
+    \item \textbf{Aislamiento de puertos útiles:} En Nmap descartamos los puertos cerrados o filtrados (\texttt{--open}), agrupando los resultados por IP con sus versiones de servicio identificadas.
+\end{itemizeColor}

@@ -1,4 +1,13 @@
 ¿Qué significa OSINT? ¿Para qué sirve?
 
 \textbf{Respuesta:}
+\textbf{OSINT} son las siglas en inglés de \textit{Open Source Intelligence} (Inteligencia de Fuentes Abiertas). Hace referencia a la disciplina y metodología orientada a recopilar, procesar, correlacionar y analizar información legal y públicamente accesible para generar inteligencia accionable~\cite{bazzell_osint}. Abarca datos provenientes de registros públicos (WHOIS, DNS, certificados SSL), motores de búsqueda, redes sociales, repositorios de código, medios de comunicación y foros técnicos.
+
+En el contexto de la ciberseguridad y las pruebas de penetración, OSINT sirve para:
+\begin{itemizeColor}
+    \item \textbf{Reconocimiento pasivo (\textit{Footprinting}):} Permite mapear toda la infraestructura pública del objetivo (subdominios, direcciones IP, servicios en la nube y servidores de correo) sin interactuar directamente con sus servidores, evitando disparar alertas en los sistemas de detección de intrusos (IDS/IPS) o firewalls~\cite{nist_sp800_115, mitre_attack_recon}.
+    \item \textbf{Evaluación de la superficie de ataque:} Identifica tecnologías obsoletas, puertos potencialmente expuestos o paneles de acceso administrativo que no deberían estar a la vista de Internet.
+    \item \textbf{Detección de fugas de datos y credenciales:} Localiza secretos empresariales, claves de API o contraseñas filtradas en repositorios públicos (como GitHub o GitLab) o en brechas de seguridad previas.
+    \item \textbf{Análisis de perfiles y roles:} Permite conocer la estructura interna, organigrama y correos corporativos del personal para diseñar programas de capacitación y evaluar la susceptibilidad frente a campañas de ingeniería social.
+\end{itemizeColor}
 

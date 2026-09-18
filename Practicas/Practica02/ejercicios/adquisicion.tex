@@ -1,0 +1,533 @@
+\subsection*{Adquisición}
+% Etapa de obtención de la información. Explicación del script.
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+
+# Inicializacion de variables.
+instalar_herramientas=0
+objetivo=""
+archivo_salida=""
+max_subdominios=0
+omitir_subdominios=0
+modo_solo_ip=0
+ip_original=""
+
+# Guardamos el stdout original (la terminal) en el descriptor 3.
+# Más adelante, cuando redirijamos todo al archivo, usaremos >&3
+# para imprimir mensajes de estado que el usuario sí debe ver.
+exec 3>&1
+
+# Funcion para desplegar la informacion de ayuda.
+mostrar_ayuda(){
+    echo "==========================================================" >&3
+    echo "       Script de Pentesting - Práctica 2 de CyS" >&3
+    echo "==========================================================" >&3
+    echo "" >&3
+    echo "Descripción:" >&3
+    echo "  Este script realiza una recolección de información sobre" >&3
+    echo "  un dominio o dirección IP. Toda la salida se guarda únicamente" >&3
+    echo "  en el archivo de reporte; la terminal solo muestra mensajes" >&3
+    echo "  de estado del progreso del script." >&3
+    echo "" >&3
+    echo "  Si se ingresa una dirección IPv4, el script busca primero" >&3
+    echo "  el dominio asociado vía registro PTR, certificado SSL/TLS o" >&3
+    echo "  redirección HTTP. Si encuentra un dominio, ejecuta el análisis" >&3
+    echo "  completo sobre él; si no, ejecuta un análisis de red, latencia," >&3
+    echo "  ruta y puertos directamente sobre la IP (modo solo IP)." >&3
+    echo "" >&3
+    echo "  Herramientas utilizadas:" >&3
+    echo "    whois      Información del registrador, contactos y fechas." >&3
+    echo "    ping       Conectividad y latencia." >&3
+    echo "    host/dig   IPs públicas (IPv4/IPv6), segmentos y registros reversos." >&3
+    echo "    traceroute Ruta y saltos al objetivo." >&3
+    echo "    dnsrecon   Enumeración completa de registros DNS." >&3
+    echo "    subfinder  Descubrimiento pasivo de subdominios (certificados CT)." >&3
+    echo "    sublist3r  Descubrimiento pasivo de subdominios (motores de búsqueda)." >&3
+    echo "    findomain  Descubrimiento pasivo de subdominios (registros SSL)." >&3
+    echo "    dnsmap     Descubrimiento activo de subdominios (fuerza bruta)." >&3
+    echo "    nmap       Escaneo de puertos abiertos, estados y versión de servicios." >&3
+    echo "" >&3
+    echo "Uso:" >&3
+    echo "  \$0 [banderas] <dominio|ip> [archivo_salida]" >&3
+    echo "" >&3
+    echo "Argumentos:" >&3
+    echo "  <dominio|ip>      Dominio (ej. unam.mx) o dirección IPv4. [REQUERIDO]" >&3
+    echo "                    Si es IP, busca dominio o ejecuta modo solo IP." >&3
+    echo "  [archivo_salida]  Archivo donde se guardará el reporte." >&3
+    echo "                    Por defecto: <dominio|ip>_reporte_pentesting.txt" >&3
+    echo "" >&3
+    echo "Banderas:" >&3
+    echo "  -h, --help             Muestra esta ayuda y finaliza el script." >&3
+    echo "  -i, --install          Verifica e instala las herramientas necesarias." >&3
+    echo "  -s, --skip-subdomains  Omite la búsqueda de subdominios (recomendado para" >&3
+    echo "                         objetivos masivos como sistemas de gobierno)." >&3
+    echo "  -n <número>            Limita la tabla de subdominios a los primeros <número>" >&3
+    echo "                         activos. Sin esta bandera se muestra la tabla completa." >&3
+    echo "                         Si hay más resultados que el límite, indica cuántos quedan." >&3
+    echo "==========================================================" >&3
+}
+
+# Se leen los parametros de entrada.
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -h | --help)
+            mostrar_ayuda
+            exit 0
+            ;;
+        -i | --install)
+            instalar_herramientas=1
+            shift
+            ;;
+        -s | --skip-subdomains | --no-subdomains)
+            omitir_subdominios=1
+            shift
+            ;;
+        -n)
+            if [[ "$2" =~ ^[0-9]+$ ]] && [ "$2" -gt 0 ]; then
+                max_subdominios=$2
+                shift 2
+            else
+                echo "Error: -n requiere un número entero positivo. (ej. -n 50)" >&3
+                exit 1
+            fi
+            ;;
+        -*)
+            echo "Error: Opción desconocida $1" >&3
+            mostrar_ayuda
+            exit 1
+            ;;
+        *)
+            if [ -z "$objetivo" ]; then
+                objetivo=$1
+            elif [ -z "$archivo_salida" ]; then
+                archivo_salida=$1
+            else
+                echo "Argumento extra ignorado -> $1." >&3
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Validar que la entrada de objetivo se proporciono.
+if [ -z "$objetivo" ]; then
+    echo "Error: Parámetro de objetivo faltante." >&3
+    echo "Uso: $0 [-i] <dominio|ip> [archivo_salida]" >&3
+    echo "Ejecuta $0 -h para ayuda." >&3
+    exit 1
+fi
+
+#----------------------------------------------------------------------
+# Si el objetivo ingresado es una dirección IPv4, intentamos obtener
+# el dominio asociado mediante:
+#   1. Consulta reversa PTR con dig -x.
+#   2. Inspección del certificado SSL/TLS en el puerto 443.
+#   3. Cabecera HTTP de redirección (Location).
+# Si no se encuentra un dominio, se activa el modo solo IP para
+# realizar las pruebas aplicables a direcciones de red.
+#----------------------------------------------------------------------
+if [[ "$objetivo" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    ip_original="$objetivo"
+    echo "Dirección IPv4 detectada: $ip_original" >&3
+    echo "Buscando dominio asociado mediante registro reverso (PTR)..." >&3
+
+    ptr_raw=$(dig -x "$ip_original" +short 2>/dev/null | head -n 1)
+    dominio_ptr=$(echo "$ptr_raw" | sed 's/\.$//')
+
+    if [ -n "$dominio_ptr" ]; then
+        echo "Dominio asociado encontrado (PTR): $dominio_ptr" >&3
+        echo "El análisis se ejecutará sobre: $dominio_ptr" >&3
+        objetivo="$dominio_ptr"
+    else
+        echo "No se encontró registro PTR. Consultando certificado SSL/TLS..." >&3
+        ssl_out=$(echo | timeout 3 openssl s_client -connect "$ip_original:443" 2>/dev/null | openssl x509 -noout -subject -ext subjectAltName 2>/dev/null)
+        ssl_dom=$(echo "$ssl_out" | grep -o 'DNS:[a-zA-Z0-9.-]*' | cut -d: -f2 | grep -v '^\*' | sort -u | head -n 1)
+        [ -z "$ssl_dom" ] && ssl_dom=$(echo "$ssl_out" | grep -o 'CN\s*=\s*[^,]*' | sed -e 's/CN\s*=\s*//' -e 's/\*//g' | head -n 1)
+
+        if [ -n "$ssl_dom" ]; then
+            echo "Dominio asociado encontrado (Certificado SSL): $ssl_dom" >&3
+            echo "El análisis se ejecutará sobre: $ssl_dom" >&3
+            objetivo="$ssl_dom"
+        else
+            echo "No se encontró certificado SSL. Consultando redirección HTTP..." >&3
+            http_loc=$(timeout 3 curl -s -I -k "https://$ip_original/" 2>/dev/null | grep -i '^location:' | head -n 1 | awk '{print $2}' | sed -E 's|https?://([^:/]+).*|\1|' | tr -d '\r')
+            [ -z "$http_loc" ] && http_loc=$(timeout 3 curl -s -I "http://$ip_original/" 2>/dev/null | grep -i '^location:' | head -n 1 | awk '{print $2}' | sed -E 's|https?://([^:/]+).*|\1|' | tr -d '\r')
+
+            if [ -n "$http_loc" ]; then
+                echo "Dominio asociado encontrado (Redirección HTTP): $http_loc" >&3
+                echo "El análisis se ejecutará sobre: $http_loc" >&3
+                objetivo="$http_loc"
+            else
+                echo "No se encontró ningún dominio asociado para $ip_original." >&3
+                echo "Continuando en modo solo IP (análisis de red y servicios)..." >&3
+                modo_solo_ip=1
+                objetivo="$ip_original"
+            fi
+        fi
+    fi
+fi
+
+# Valida que se haya dado una ruta de archivo de salida,
+# en otro caso utiliza el archivo de salida por defecto.
+if [ -z "$archivo_salida" ]; then
+    archivo_salida="${objetivo}"_reporte_pentesting.txt
+    echo "No se especificó archivo de salida. Usando archivo por defecto: $archivo_salida" >&3
+fi
+
+#----------------------------------------------------------------------
+# A partir de este punto redirigimos stdout y stderr del proceso
+# completo al archivo de salida (sobreescribiéndolo si ya existe).
+# Cualquier herramienta (dnsrecon, traceroute, dig, etc.) escribirá
+# directo al archivo sin que nada aparezca en la terminal. Los mensajes
+# de estado al usuario se imprimen con >&3 (terminal original).
+# Vacíamos el archivo de salida si ya existe para sobreescribirlo,
+# y luego abrimos el descriptor 1 en modo append (>>) para que todos
+# los procesos hijos y comandos escriban de forma secuencial al final.
+> "$archivo_salida"
+exec 1>>"$archivo_salida" 2>&1
+
+# Verificar que las herramientas necesarias esten instaladas en el caso
+# que se haya pasado la bandera -i.
+if [ $instalar_herramientas -eq 1 ]; then
+    echo "Verificando herramientas..." >&3
+    paquetes=("iputils-ping" "dnsutils" "host" "dig" "traceroute" "whois" "sublist3r" "subfinder" "findomain" "dnsmap" "dnsrecon" "nmap" "etherape" "curl" "openssl")
+    for paquete in "${paquetes[@]}"; do
+        comando=$paquete
+        [ "$paquete" == "iputils-ping" ] && comando="ping"
+        [ "$paquete" == "dnsutils" ]     && comando="nslookup"
+
+        if ! command -v "$comando" &> /dev/null; then
+            echo "  Instalando $paquete..." >&3
+            sudo apt-get update > /dev/null
+            sudo apt-get install -y "$paquete"
+        fi
+    done
+    echo "Comprobación de herramientas completada." >&3
+fi
+
+echo "Comienza pruebas de pentesting." >&3
+echo "Guardando los resultados en $archivo_salida..." >&3
+echo "Reporte de pentesting para $objetivo"
+if [ "$modo_solo_ip" -eq 1 ]; then
+    echo "Tipo de objetivo: Dirección IPv4 (Modo solo IP)"
+fi
+echo "Fecha de escaneo: $(date)"
+echo "================================================================="
+
+#----------------------------------------------------------------------
+# Obtenemos información usando WHOIS.
+# Filtramos con grep -v "^%" para eliminar los comentarios de uso
+# responsable que whois agrega al final de su salida.
+#----------------------------------------------------------------------
+echo "Usando WHOIS obtenemos información del objetivo." >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+whois "$objetivo" | grep -v "^%" >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+
+#----------------------------------------------------------------------
+# Comprobamos la conectividad y medimos la latencia usando ping.
+# Usamos -c 4 para limitar a 4 paquetes y grep -iE para filtrar
+# únicamente las líneas con el resumen de pérdida de paquetes y RTT.
+#----------------------------------------------------------------------
+echo "Usando ping comprobamos la conectividad y medimos la latencia." >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+echo "" >> "$archivo_salida"
+ping -c 4 "$objetivo" | grep -iE "^ping|^---|paquetes|rtt" >> "$archivo_salida"
+echo "" >> "$archivo_salida"
+
+#----------------------------------------------------------------------
+# Buscamos las direcciones IPv4 e IPv6 públicas con host y dig.
+# En modo solo IP se analiza directamente la segmentación de red
+# y los registros reversos de la IP objetivo.
+#----------------------------------------------------------------------
+if [ "$modo_solo_ip" -eq 1 ]; then
+    ipv4="$objetivo"
+    echo "=================================================================" >> "$archivo_salida"
+    echo "Verificando segmentación de red y registros reversos para la IP." >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+    echo "------------------------------------" >> "$archivo_salida"
+    echo "Analizando la IP $objetivo:" >> "$archivo_salida"
+    echo "Segmentos de red asignados:" >> "$archivo_salida"
+    whois "$objetivo" | grep -iE "CIDR|inetnum|route|NetRange" >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+    echo "Registros reversos:" >> "$archivo_salida"
+    dig -x "$objetivo" +short >> "$archivo_salida"
+    echo "------------------------------------" >> "$archivo_salida"
+    echo "==============================================================" >> "$archivo_salida"
+else
+    echo "=================================================================" >> "$archivo_salida"
+    echo "Usando host obtenemos las direcciones IPv4 e IPv6 del servidor." >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+    host "$objetivo" >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+    echo "Usamos dig para confirmar IPs públicas (+noall +answer)." >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+    dig "$objetivo" +noall +answer >> "$archivo_salida"
+    echo "Registros IPv6 (AAAA):" >> "$archivo_salida"
+    dig "$objetivo" AAAA +short >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+
+    echo " Verificando segmentación de red y registros reversos por IP." >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+
+    ipv4=$(dig "$objetivo" +short | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
+    if [ -n "$ip_original" ] && ! grep -q "$ip_original" <<< "$ipv4"; then
+        ipv4=$(printf "%s\n%s" "$ipv4" "$ip_original" | sed '/^$/d' | sort -u)
+    fi
+    if [ -n "$ipv4" ]; then
+        while read -r ip; do
+            echo "------------------------------------" >> "$archivo_salida"
+            echo "Analizando la IP $ip:" >> "$archivo_salida"
+            echo "Segmentos de red asignados:" >> "$archivo_salida"
+            whois "$ip" | grep -iE "CIDR|inetnum|route|NetRange" >> "$archivo_salida"
+            echo "" >> "$archivo_salida"
+            echo "Registros reversos:" >> "$archivo_salida"
+            dig -x "$ip" +short >> "$archivo_salida"
+            echo "------------------------------------" >> "$archivo_salida"
+        done <<< "$ipv4"
+    else
+        echo "No se pudo obtener ninguna IPv4." >> "$archivo_salida"
+    fi
+
+    echo "==============================================================" >> "$archivo_salida"
+    echo "Hacemos lo mismo para las IPs IPv6:" >> "$archivo_salida"
+
+    ipv6=$(dig "$objetivo" AAAA +short | grep -E '^[0-9a-fA-F:]+$')
+    if [ -n "$ipv6" ]; then
+        while read -r ip6; do
+            echo "------------------------------------" >> "$archivo_salida"
+            echo "Analizando la IP $ip6:" >> "$archivo_salida"
+            echo "Segmentos de red asignados:" >> "$archivo_salida"
+            whois "$ip6" | grep -iE "CIDR|inetnum|route|NetRange" >> "$archivo_salida"
+            echo "" >> "$archivo_salida"
+            echo "Registros reversos:" >> "$archivo_salida"
+            dig -x "$ip6" +short >> "$archivo_salida"
+            echo "------------------------------------" >> "$archivo_salida"
+        done <<< "$ipv6"
+    else
+        echo "No se pudo obtener ninguna IPv6." >> "$archivo_salida"
+    fi
+
+    echo "==============================================================" >> "$archivo_salida"
+fi
+
+#----------------------------------------------------------------------
+# Obtenemos la ruta y los saltos para llegar al objetivo con traceroute.
+# Los saltos intermedios pueden aparecer como * si los routers bloquean
+# los paquetes ICMP.
+#----------------------------------------------------------------------
+echo "=================================================================" >> "$archivo_salida"
+echo "Usando traceroute obtenemos la ruta y los saltos al objetivo." >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+echo "" >> "$archivo_salida"
+traceroute "$objetivo" >> "$archivo_salida"
+echo "" >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+
+#----------------------------------------------------------------------
+# Enumeramos los registros DNS con dnsrecon.
+# Obtiene: topología pública (A, AAAA, NS, DNSSEC), proveedores
+# externos (MX, SRV) y políticas de autenticación (TXT, SPF, DKIM).
+# En modo solo IP esta prueba se omite por requerir un nombre de dominio.
+#----------------------------------------------------------------------
+if [ "$modo_solo_ip" -eq 1 ]; then
+    echo "=================================================================" >> "$archivo_salida"
+    echo "dnsrecon requiere un nombre de dominio (omitido en modo solo IP)." >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+else
+    echo "=================================================================" >> "$archivo_salida"
+    echo "Usando dnsrecon enumeramos los registros DNS del dominio." >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+    dnsrecon -d "$objetivo" &>> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+fi
+
+#----------------------------------------------------------------------
+# Descubrimos subdominios con cuatro herramientas complementarias:
+#   - subfinder  (pasiva): consulta certificados CT y APIs públicas.
+#   - sublist3r  (pasiva): consulta motores de búsqueda y APIs.
+#   - findomain  (pasiva): especializada en registros de certificados.
+#   - dnsmap     (activa): fuerza bruta con diccionario interno.
+# Cada herramienta guarda su salida en un archivo temporal; los
+# resultados se unifican con sort -u y se presenta solo la tabla final.
+# En modo solo IP esta prueba se omite por requerir un nombre de dominio.
+# Con la bandera -s (--skip-subdomains), se omite para evitar demoras
+# excesivas en infraestructuras gubernamentales o de gran escala.
+#----------------------------------------------------------------------
+if [ "$modo_solo_ip" -eq 1 ]; then
+    echo "=================================================================" >> "$archivo_salida"
+    echo "Descubrimiento de subdominios omitido (requiere nombre de dominio)." >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+elif [ "$omitir_subdominios" -eq 1 ]; then
+    echo "=================================================================" >> "$archivo_salida"
+    echo "Descubrimiento de subdominios omitido por bandera (-s / --skip-subdomains)." >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+    echo "Fase de descubrimiento de subdominios omitida por el usuario (-s)." >&3
+else
+    echo "=================================================================" >> "$archivo_salida"
+    echo "Descubrimiento de subdominios con múltiples herramientas." >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+
+    tmp_subfinder="/tmp/${objetivo}_subfinder.txt"
+    tmp_sublist3r="/tmp/${objetivo}_sublist3r.txt"
+    tmp_findomain="/tmp/${objetivo}_findomain.txt"
+    tmp_dnsmap="/tmp/${objetivo}_dnsmap.txt"
+    tmp_todos="/tmp/${objetivo}_todos.txt"
+
+    touch "$tmp_subfinder" "$tmp_sublist3r" "$tmp_findomain" "$tmp_dnsmap"
+
+    if command -v subfinder &> /dev/null; then
+        subfinder -d "$objetivo" -silent -o "$tmp_subfinder" > /dev/null 2>&1
+        count_subfinder=$(wc -l < "$tmp_subfinder")
+    else
+        count_subfinder=0
+    fi
+
+    if command -v sublist3r &> /dev/null; then
+        sublist3r -d "$objetivo" -o "$tmp_sublist3r" > /dev/null 2>&1
+        count_sublist3r=$(wc -l < "$tmp_sublist3r")
+    else
+        count_sublist3r=0
+    fi
+
+    if command -v findomain &> /dev/null; then
+        findomain -t "$objetivo" -u "$tmp_findomain" > /dev/null 2>&1
+        count_findomain=$(wc -l < "$tmp_findomain")
+    else
+        count_findomain=0
+    fi
+
+    if command -v dnsmap &> /dev/null; then
+        dnsmap "$objetivo" -r "$tmp_dnsmap" > /dev/null 2>&1
+        count_dnsmap=$(wc -l < "$tmp_dnsmap")
+    else
+        count_dnsmap=0
+    fi
+
+    cat "$tmp_subfinder" "$tmp_sublist3r" "$tmp_findomain" "$tmp_dnsmap" 2>/dev/null \
+        | grep -v '^$' | sort -u > "$tmp_todos"
+
+    total=$(wc -l < "$tmp_todos")
+
+    echo "=================================================================" >> "$archivo_salida"
+    echo "RESUMEN POR HERRAMIENTA:" >> "$archivo_salida"
+    echo "  subfinder  : $count_subfinder subdominios" >> "$archivo_salida"
+    echo "  sublist3r  : $count_sublist3r subdominios" >> "$archivo_salida"
+    echo "  findomain  : $count_findomain subdominios" >> "$archivo_salida"
+    echo "  dnsmap     : $count_dnsmap subdominios" >> "$archivo_salida"
+    echo "-----------------------------------------------------------------" >> "$archivo_salida"
+    echo "  UNIÓN TOTAL (sin duplicados): $total subdominios únicos" >> "$archivo_salida"
+    echo "=================================================================" >> "$archivo_salida"
+    echo "" >> "$archivo_salida"
+
+    echo "=================================================================" >> "$archivo_salida"
+    echo "UNIÓN DE SUBDOMINIOS CON SUS IPs RESUELTAS:" >> "$archivo_salida"
+    if [ "$max_subdominios" -gt 0 ]; then
+        echo "(Mostrando los primeros $max_subdominios subdominios activos)" >> "$archivo_salida"
+    else
+        echo "(Subdominios con registro DNS activo)" >> "$archivo_salida"
+    fi
+    echo "=================================================================" >> "$archivo_salida"
+    printf "%-55s %s\n" "SUBDOMINIO" "IP(s)" >> "$archivo_salida"
+    echo "-----------------------------------------------------------------" >> "$archivo_salida"
+
+    activos=0
+    restantes=0
+
+    if [ -s "$tmp_todos" ]; then
+        while read -r sub; do
+            ips=$(dig "$sub" +short 2>/dev/null \
+                  | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' \
+                  | tr '\n' ',' | sed 's/,$//')
+            if [ -n "$ips" ]; then
+                activos=$((activos + 1))
+                if [ "$max_subdominios" -gt 0 ] && [ "$activos" -gt "$max_subdominios" ]; then
+                    restantes=$((restantes + 1))
+                else
+                    printf "%-55s %s\n" "$sub" "$ips" >> "$archivo_salida"
+                fi
+            fi
+        done < "$tmp_todos"
+    fi
+
+    echo "-----------------------------------------------------------------" >> "$archivo_salida"
+    echo "Total de subdominios activos (con IP resuelta): $activos" >> "$archivo_salida"
+    if [ "$restantes" -gt 0 ]; then
+        echo "... y $restantes subdominios activos más no mostrados." >> "$archivo_salida"
+    fi
+    echo "=================================================================" >> "$archivo_salida"
+
+    rm -f "$tmp_subfinder" "$tmp_sublist3r" "$tmp_findomain" "$tmp_dnsmap" "$tmp_todos"
+fi
+
+#----------------------------------------------------------------------
+# Escaneamos puertos, estados y servicios con nmap.
+# Usamos -sV para detectar la versión de cada servicio, --open para
+# mostrar solo los puertos abiertos y -T4 para acelerar el escaneo.
+# Reutilizamos la lista de IPs obtenida previamente para realizar
+# la ejecución iterada de nmap sobre cada dirección disponible.
+#----------------------------------------------------------------------
+echo "=================================================================" >> "$archivo_salida"
+echo "Usando nmap obtenemos los puertos abiertos, estados y servicios." >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+echo "" >> "$archivo_salida"
+
+if command -v nmap &> /dev/null; then
+    if [ -n "$ipv4" ]; then
+        while read -r ip; do
+            echo "------------------------------------" >> "$archivo_salida"
+            echo "Escaneando la IP $ip con nmap:" >> "$archivo_salida"
+            nmap -sV --open -T4 "$ip" >> "$archivo_salida"
+            echo "------------------------------------" >> "$archivo_salida"
+            echo "" >> "$archivo_salida"
+        done <<< "$ipv4"
+    else
+        echo "--- Escaneando el objetivo: $objetivo ---" >> "$archivo_salida"
+        nmap -sV --open -T4 "$objetivo" >> "$archivo_salida"
+    fi
+else
+    echo "nmap no está instalado. Omitiendo escaneo de puertos." >> "$archivo_salida"
+    echo "Instálalo con: sudo apt-get install nmap  (o usa la bandera -i)" >> "$archivo_salida"
+fi
+
+echo "" >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+echo "" >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+echo "Fin del reporte de pentesting para $objetivo." >> "$archivo_salida"
+echo "=================================================================" >> "$archivo_salida"
+
+echo ""
+echo "Reporte finalizado. Resultados guardados en: $archivo_salida" >&3
+\end{lstlisting}
+
+
+
+Para automatizar la obtención de información, desarrollamos el script \texttt{pentesting.sh}. Este script recopila los datos públicos y técnicos de un dominio o dirección IP, guardando el resultado en un archivo de reporte (por defecto, \texttt{<objetivo>\_reporte\_\allowbreak pentesting.txt}).
+
+El script incluye banderas para su control:
+\begin{itemizeColor}
+    \item \texttt{-h, --help}: Muestra las opciones y modo de uso.
+    \item \texttt{-i, --install}: Verifica e instala las herramientas necesarias si faltan en el sistema. Funciona únicamente en sistemas que usen \texttt{apt-get} como lo es Kali Linux.
+    \item \texttt{-s, --skip-subdomains}: Omite por completo la fase de búsqueda y resolución de subdominios. Se añadió esta opción al tratar con el dominio \texttt{gob.mx}, ya que la ejecución se prolongaba excesivamente debido a la gran cantidad de subdominios asociados a la infraestructura gubernamental. Este aspecto se detalla con mayor profundidad en la sección de análisis.
+    \item \texttt{-n <número>}: Limita la tabla de subdominios a los primeros $n$ activos para evitar reportes excesivamente largos.
+\end{itemizeColor}
+
+Si se ingresa una dirección IPv4, el script busca su dominio mediante consulta reversa (PTR), certificado SSL/TLS o redirección HTTP. Si lo encuentra, analiza el dominio completo; si no, entra en \textit{modo solo IP} y ejecuta únicamente las pruebas aplicables a redes y puertos sin detenerse.
+
+El script utiliza las siguientes herramientas para obtener información:
+\begin{enumerateColor}
+    \item \textbf{WHOIS:} Obtiene datos del registro, fechas de expiración, contactos y servidores de nombres.
+    \item \textbf{Ping:} Mide la conectividad, latencia y pérdida de paquetes mediante 4 solicitudes ICMP.
+    \item \textbf{Host y Dig:} Identifica las direcciones IP (IPv4 e IPv6), así como los segmentos de red asignados (bloques CIDR e \textit{inetnum}) y registros reversos de cada una.
+    \item \textbf{Traceroute:} Muestra la ruta de saltos y enrutadores hacia el objetivo.
+    \item \textbf{Dnsrecon:} Enumera los registros DNS principales (SOA, MX, TXT) y políticas de correo como SPF y DMARC.
+    \item \textbf{Subdominios:} Combina las herramientas \texttt{subfinder}, \texttt{sublist3r}, \texttt{findomain} y \texttt{dnsmap} y elimina duplicados con \texttt{sort -u}. Finalmente, genera una tabla con los subdominios que tienen IP activa (a menos que se active la bandera \texttt{-s} para omitir esta fase).
+    \item \textbf{Nmap:} Escanea los puertos abiertos (\texttt{--open}) y detecta versiones de servicios (\texttt{-sV}), iterando sobre todas las IPs disponibles del objetivo.
+\end{enumerateColor}

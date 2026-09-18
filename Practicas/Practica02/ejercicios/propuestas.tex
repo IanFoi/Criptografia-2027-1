@@ -1,0 +1,90 @@
+\subsection*{Propuestas}
+% Presentar propuestas de ataque formuladas teniendo en cuenta lo hecho en el inciso anterior.
+\textbf{Respuesta:}
+
+Teniendo en cuenta las vulnerabilidades, configuraciones débiles y datos de inteligencia obtenidos, formulamos tanto las propuestas de vectores de ataque desde la perspectiva de un atacante como las propuestas de mitigación y defensa.
+
+% ======================================================================
+% 1. Vectores de ataque
+% ======================================================================
+\subsubsection*{1. Propuestas de vectores de ataque (Perspectiva Ofensiva)}
+
+\begin{enumerateColor}
+    \item \textbf{Campaña de suplantación institucional (\textit{Email Spoofing} y \textit{Phishing}):}
+    \begin{itemizeColor}
+        \item \textbf{Objetivos:} \texttt{unam.mx}, \texttt{hackthissite.org} y \texttt{gob.mx}.
+        \item \textbf{Incumplimiento técnico:} Violación a las directrices de aplicación de políticas del estándar \textbf{RFC 7489 (DMARC)}~\cite{rfc7489_dmarc}. En \texttt{unam.mx} se incumple el objetivo de protección al mantener \texttt{p=none} (modo solo monitoreo), en \texttt{hackthissite.org} al usar \texttt{pct=25} (dejando el 75\% del tráfico sin protección), y en \texttt{gob.mx} al omitir por completo la publicación de un registro DMARC, desaprovechando la telemetría forense y el forzado de rechazo en servidores receptores.
+        \item \textbf{Mecánica del ataque:} Un atacante puede montar un servidor propio y emitir correos fraudulentos suplantando direcciones legítimas como \texttt{rectoria@unam.mx}, \texttt{contacto@gob.mx} o \texttt{escolar@unam.mx}. Al recibir los correos, los proveedores destinatarios (Gmail, Outlook) validan el registro DMARC, pero ante políticas nulas o inexistentes no tienen instrucción estricta de descarte, facilitando que los mensajes ingresen a la bandeja de entrada para engañar a los usuarios.
+    \end{itemizeColor}
+
+    \item \textbf{Explotación de software desactualizado en servidores web y proxies:}
+    \begin{itemizeColor}
+        \item \textbf{Objetivo principal:} Servidores con Apache 2.4.51 (\texttt{unam.mx}) y HAProxy 1.3--1.9 (\texttt{hackthissite.org}).
+        \item \textbf{Vulnerabilidades en bases de datos oficiales:}
+        \begin{itemizeColor}
+            \item \textbf{CVE-2021-44790}~\cite{cve_2021_44790} (NVD, CVSS 9.8 Crítico): \textit{``A carefully crafted request body can cause a buffer overflow in the mod\_lua multipart parser in Apache HTTP Server 2.4.51 and earlier''}. Un atacante podría enviar una petición HTTP POST especialmente construida con contenido multiparte para provocar la corrupción de memoria en \texttt{mod\_lua}, permitiendo la ejecución remota de código o la caída inmediata del portal.
+            \item \textbf{CVE-2021-44224}~\cite{cve_2021_44224} (NVD, CVSS 7.5 Alto): \textit{``A crafted URI sent to httpd configured as a forward proxy can cause a crash (NULL pointer dereference)''}. Permite inducir condiciones de denegación de servicio (DoS).
+            \item \textbf{CVE-2019-18277}~\cite{cve_2019_18277} (NVD, CVSS 7.5 Alto): \textit{``HAProxy does not properly handle Transfer-Encoding and Content-Length headers, leading to HTTP Request Smuggling''}. Un atacante puede desincronizar las peticiones entre el proxy frontal y los servidores web de backend, logrando secuestrar sesiones de otros usuarios o envenenar la caché web.
+        \end{itemizeColor}
+        \item \textbf{Mecánica del ataque:} Mediante el envío de peticiones HTTP malformadas orientadas a los módulos vulnerables detectados en los escaneos de Nmap.
+    \end{itemizeColor}
+
+    \item \textbf{Infiltración y movimiento lateral a través de entornos de Desarrollo y QA:}
+    \begin{itemizeColor}
+        \item \textbf{Objetivos:} \texttt{pemex.com} (\texttt{api-cloud-des}, \texttt{ase3-digital-qa}) e \texttt{ipn.mx} (\texttt{servidor.dev}).
+        \item \textbf{Incumplimiento técnico:} Incumplimiento de la guía metodológica OWASP WSTG-INFO-04 (Reconocimiento de aplicaciones de prueba y desarrollo)~\cite{owasp_wstg} y las pautas de segregación de redes de \textbf{NIST SP 800-115}~\cite{nist_sp800_115}.
+        \item \textbf{Mecánica del ataque:} Los entornos de desarrollo suelen operar con versiones preliminares, certificados autofirmados, trazas de depuración activas y credenciales predeterminadas. Un atacante enfocaría sus esfuerzos en vulnerar estos subdominios secundarios para obtener secretos, cadenas de conexión o claves de API que posteriormente le permitan atacar los entornos productivos de la organización.
+    \end{itemizeColor}
+
+    \item \textbf{Secuestro de subdominios huérfanos (\textit{Subdomain Takeover}):}
+    \begin{itemizeColor}
+        \item \textbf{Objetivo:} \texttt{gob.mx} (campañas, micrositios federales y recursos transitorios en la nube).
+        \item \textbf{Incumplimiento técnico:} Violación a las directrices de verificación de configuración perimetral de \textbf{OWASP WSTG-CONF-10} (Pruebas de secuestro de subdominios)~\cite{owasp_wstg} y debilidad de control de acceso clasificada como \textbf{CWE-284}~\cite{cwe_284}.
+        \item \textbf{Mecánica del ataque:} Un atacante analiza la superficie masiva de subdominios de \texttt{gob.mx} identificando aquellos con registros DNS que apuntan a servicios en la nube externos (como AWS S3, Azure Web Apps o GitHub Pages) que han sido dados de baja por las dependencias públicas pero cuyo registro DNS no fue eliminado. Al reclamar el nombre del recurso en dicho proveedor cloud, el atacante obtiene control total del subdominio gubernamental legítimo, pudiendo emitir certificados válidos, alojar portales falsos de recaudación o distribuir malware con el respaldo del dominio oficial \texttt{.gob.mx}.
+    \end{itemizeColor}
+
+    \item \textbf{Ingeniería social dirigida (\textit{Spear Phishing}) contra el personal de infraestructura:}
+    \begin{itemizeColor}
+        \item \textbf{Objetivos:} Contactos administrativos y técnicos expuestos en WHOIS (\texttt{unam.mx}).
+        \item \textbf{Fundamento:} Incumplimiento de las recomendaciones de minimización de datos en registros públicos del RFC 3912 (WHOIS)~\cite{rfc3912_whois} y táctica de reconocimiento TA0043 de MITRE ATT\&CK~\cite{mitre_attack_recon}.
+        \item \textbf{Mecánica del ataque:} Conociendo la identidad exacta de los responsables de la DGTIC, un atacante puede estructurar campañas de engaño telefónico o correos altamente personalizados~\cite{mitnick_art_of_deception}, haciéndose pasar por proveedores de servicios o directivos para solicitar reseteos de contraseña o acceso a consolas de red.
+    \end{itemizeColor}
+\end{enumerateColor}
+
+% ======================================================================
+% 2. Propuestas de mitigación y defensa
+% ======================================================================
+\subsubsection*{2. Propuestas de mitigación y defensa (Recomendaciones de Seguridad)}
+
+Para remediar las debilidades descubiertas y robustecer la infraestructura, proponemos las siguientes medidas técnicas de mitigación:
+
+\begin{enumerateColor}
+    \item \textbf{Endurecimiento y transición obligatoria en DMARC (Remediación para UNAM, HackThisSite y gob.mx):}
+    \begin{itemizeColor}
+        \item Modificar la política DMARC en la UNAM y HackThisSite para migrar hacia \textbf{\texttt{p=reject} con \texttt{pct=100}}, siguiendo el estándar del IPN (\texttt{ipn.mx}).
+        \item En \texttt{gob.mx}, publicar de forma prioritaria el registro DMARC en la zona DNS (\texttt{\_dmarc.gob.mx}) con política de rechazo (\texttt{v=DMARC1; p=reject; rua=mailto:...}) para complementar su regla SPF actual y habilitar la recolección de reportes forenses ante cualquier intento de suplantación.
+        \item Procesar de forma automatizada los reportes agregados enviados a las direcciones \texttt{rua} para detectar infraestructura no autorizada que intente emitir correo institucional.
+    \end{itemizeColor}
+
+    \item \textbf{Gestión de parches y ocultamiento de versiones (\textit{Patch Management}):}
+    \begin{itemizeColor}
+        \item Actualizar de manera prioritaria los paquetes de Apache HTTP Server en los servidores de la UNAM a la rama estable más reciente (2.4.58 o superior), remediando los fallos \textbf{CVE-2021-44790}~\cite{cve_2021_44790} y \textbf{CVE-2021-44224}~\cite{cve_2021_44224}. De forma provisional, si el módulo \texttt{mod\_lua} no es imprescindible, deshabilitarlo de la configuración de Apache.
+        \item Actualizar HAProxy en \texttt{hackthissite.org} a una versión LTS moderna (2.8 o superior) para erradicar la susceptibilidad a \textit{HTTP Request Smuggling} (\textbf{CVE-2019-18277})~\cite{cve_2019_18277}.
+        \item Ocultar las cabeceras de versión en los servidores web (\textit{Banner Grabbing Defense}): configurar \texttt{ServerTokens Prod} y \texttt{ServerSignature Off} en Apache, siguiendo el ejemplo implementado por Nginx en \texttt{gob.mx} para no regalar información valiosa a escaneos automáticos de reconocimiento.
+    \end{itemizeColor}
+
+    \item \textbf{Aislamiento de entornos de desarrollo, auditoría DNS y eliminación de Shadow IT:}
+    \begin{itemizeColor}
+        \item \textbf{Retirar los subdominios de pruebas de la zona DNS pública:} Los subdominios de desarrollo (\texttt{dev}), pruebas (\texttt{qa}) y preproducción de Pemex y del IPN deben eliminarse del DNS público y trasladarse a zonas DNS internas privadas. El acceso a estos entornos debe condicionarse exclusivamente a través de una VPN corporativa con autenticación multifactor (MFA)~\cite{cisa_cyber_hygiene, nist_sp800_63b}.
+        \item \textbf{Auditoría continua de registros CNAME y ciclo de vida (\texttt{gob.mx}):} Establecer una política centralizada de desaprovisionamiento donde cualquier subdominio asignado a campañas o proveedores en la nube sea dado de baja en el DNS simultáneamente con el servicio en la nube, evitando el secuestro de subdominios.
+        \item \textbf{Auditoría y decomiso de sitios abandonados:} La UNAM debe realizar una depuración de subdominios para dar de baja páginas de congresos y eventos antiguos (como los de 2019), o bien convertirlas en páginas HTML puramente estáticas sin gestores de contenido (CMS) ni bases de datos activas en servidores desatendidos.
+    \end{itemizeColor}
+
+    \item \textbf{Aislamiento de cookies y protección de privacidad en WHOIS:}
+    \begin{itemizeColor}
+        \item En plataformas gubernamentales masivas (\texttt{gob.mx}), restringir el alcance de las cookies de sesión para que no se declaren a nivel raíz con comodín (\texttt{Domain=.gob.mx}), previniendo ataques de fijación o captura de sesiones mediante subdominios comprometidos.
+        \item Sustituir los nombres completos y datos personales de los administradores en el registro de NIC México y LACNIC por cuentas de rol genéricas e institucionales (por ejemplo, \texttt{noc@unam.mx} o \texttt{seguridad-dns@unam.mx}), limitando la recolección pasiva de información (OSINT)~\cite{bazzell_osint}.
+        \item Implementar programas periódicos de simulación de \textit{phishing} y concientización en ciberseguridad dirigidos a los administradores y usuarios con privilegios elevados, reconociendo que la persona sigue siendo el eslabón más vulnerable de la seguridad institucional~\cite{mitnick_art_of_deception}.
+    \end{itemizeColor}
+\end{enumerateColor}
+
